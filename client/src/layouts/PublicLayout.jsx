@@ -86,15 +86,24 @@ const PublicLayout = () => {
             <div className="space-y-6">
               <h4 className="text-sm font-bold uppercase tracking-widest text-[#d4af37]">Legal</h4>
               <div className="flex flex-col gap-3">
-                {['Privacy Policy', 'Terms of Service', 'Support'].map((item) => (
-                  <Link 
-                    key={item} 
-                    to="/" 
-                    className="text-sm text-gray-400 hover:text-[#f9e79f] hover:translate-x-2 transition-all duration-300"
-                  >
-                    {item}
-                  </Link>
-                ))}
+                <Link 
+                  to="/privacy-policy" 
+                  className="text-sm text-gray-400 hover:text-[#f9e79f] hover:translate-x-2 transition-all duration-300"
+                >
+                  Privacy Policy
+                </Link>
+                <Link 
+                  to="/terms-of-service" 
+                  className="text-sm text-gray-400 hover:text-[#f9e79f] hover:translate-x-2 transition-all duration-300"
+                >
+                  Terms of Service
+                </Link>
+                <Link 
+                  to="/support" 
+                  className="text-sm text-gray-400 hover:text-[#f9e79f] hover:translate-x-2 transition-all duration-300"
+                >
+                  Support
+                </Link>
               </div>
             </div>
 

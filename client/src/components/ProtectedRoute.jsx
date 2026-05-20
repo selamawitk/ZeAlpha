@@ -12,7 +12,17 @@ const ProtectedRoute = ({ role, children }) => {
     );
   }
 
-  if (!user || user.role !== role) {
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (user.role !== role) {
+    if (user.role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    }
+    if (user.role === 'couple') {
+      return <Navigate to="/dashboard" replace />;
+    }
     return <Navigate to="/auth" replace />;
   }
 

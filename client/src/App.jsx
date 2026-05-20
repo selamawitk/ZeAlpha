@@ -16,9 +16,15 @@ import MyGifts from "./pages/MyGifts.jsx";
 import DashboardSettings from './pages/DashboardSettings';
 import AdminOverview from './pages/AdminOverview';
 import AdminOrders from './pages/AdminOrders';
+import AdminPendingPayments from './pages/AdminPendingPayments';
 import ThankYou from './pages/ThankYou';
 import WelcomeSplash from './pages/WelcomeSplash';
 import WeddingSetup from './pages/WeddingSetup';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import Support from './pages/Support';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
@@ -30,10 +36,16 @@ function App() {
               <Route element={<PublicLayout />}>
                 <Route index element={<Landing />} />
                 <Route path="w/:slug" element={<Registry />} />
+                <Route path="registry/:slug" element={<Registry />} />
                 <Route path="wedding/:slug" element={<Navigate to="/w/:slug" replace />} />
                 <Route path="auth" element={<Auth />} />
+                <Route path="forgot-password" element={<ForgotPassword />} />
+                <Route path="reset-password" element={<ResetPassword />} />
                 <Route path="thank-you" element={<ThankYou />} />
                 <Route path="my-gifts" element={<MyGifts />} />
+                <Route path="privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="terms-of-service" element={<TermsOfService />} />
+                <Route path="support" element={<Support />} />
               </Route>
 
               <Route element={<ProtectedRoute role="couple"><DashboardLayout /></ProtectedRoute>}>
@@ -47,9 +59,11 @@ function App() {
 
               <Route element={<ProtectedRoute role="admin"><AdminLayout /></ProtectedRoute>}>
                 <Route path="/admin" element={<AdminOverview />} />
+                <Route path="/admin/verify-payments" element={<AdminPendingPayments />} />
                 <Route path="/admin/orders" element={<AdminOrders />} />
               </Route>
 
+              <Route path="login" element={<Navigate to="/auth" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>

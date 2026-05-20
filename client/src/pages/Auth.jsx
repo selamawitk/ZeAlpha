@@ -27,17 +27,32 @@ const Auth = () => {
 
     try {
       if (mode === 'login') {
-        await login(form.email, form.password);
-        navigate('/welcome');
+        const userData = await login(form.email, form.password);
+
+        if (userData.role === 'admin') {
+          navigate('/admin');
+        } else if (userData.role === 'couple') {
+          navigate('/dashboard');
+        } else {
+          navigate('/');
+        }
       } else {
-        await register(
+        const newUser = await register(
           form.firstName,
           form.lastName,
           form.email,
           form.password
         );
         setSuccess('Welcome to ZeAlpha!');
-        setTimeout(() => navigate('/welcome'), 1500);
+        setTimeout(() => {
+          if (newUser.role === 'admin') {
+            navigate('/admin');
+          } else if (newUser.role === 'couple') {
+            navigate('/dashboard');
+          } else {
+            navigate('/');
+          }
+        }, 1500);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Authentication failed');
@@ -183,6 +198,13 @@ const Auth = () => {
             </form>
 
             <div className="mt-8 text-center">
+              {mode === 'login' && (
+                <p className="text-sm text-gray-500 mb-2">
+                  <a href="/forgot-password" className="text-[#d4af37] hover:text-[#9a793b] font-medium">
+                    Forgot your password?
+                  </a>
+                </p>
+              )}
               <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-semibold">
                 ZeAlpha Studio &copy; 2026
               </p>

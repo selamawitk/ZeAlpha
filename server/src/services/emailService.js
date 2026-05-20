@@ -13,6 +13,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+
 export const sendGiftReceipt = async (guestEmail, guestName, amount, giftName, digitalCardUrl) => {
   const mailOptions = {
     from: `"ZeAlpha Registry" <${process.env.EMAIL_USER}>`,
@@ -25,7 +27,7 @@ export const sendGiftReceipt = async (guestEmail, guestName, amount, giftName, d
         <p>The couple has been notified of your generosity.</p>
         ${digitalCardUrl ? `
         <div style="margin-top: 30px; text-align: center;">
-          <a href="${process.env.CLIENT_URL}${digitalCardUrl}" style="background-color: #f59e0b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">View Your Digital Card</a>
+          <a href="${clientUrl}${digitalCardUrl}" style="background-color: #f59e0b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">View Your Digital Card</a>
         </div>
         ` : ''}
         <footer style="margin-top: 40px; font-size: 12px; color: #888; text-align: center;">
@@ -49,7 +51,7 @@ export const sendWeddingFundedAlert = async (coupleEmail, giftName, totalAmount)
         <p>Your gift <strong>${giftName}</strong> has reached its goal of <strong>${totalAmount} ETB</strong>.</p>
         <p>You can now view the full list of contributors and the digital cards they've left for you in your dashboard.</p>
         <div style="margin-top: 30px; text-align: center;">
-          <a href="${process.env.CLIENT_URL}/dashboard/payouts" style="background-color: #000; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">Go to Payouts</a>
+          <a href="${clientUrl}/dashboard/payouts" style="background-color: #000; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">Go to Payouts</a>
         </div>
       </div>
     `,
@@ -69,6 +71,29 @@ export const sendPayoutNotification = async (coupleEmail, amount, method) => {
         <p>We've processed your payout of <strong>${amount} ETB</strong> via <strong>${method}</strong>.</p>
         <p>Please allow 24-48 hours for the funds to reflect in your account.</p>
         <p>Happy wedding planning!</p>
+      </div>
+    `,
+  };
+
+  return transporter.sendMail(mailOptions);
+};
+
+export const sendPasswordResetEmail = async (userEmail, resetToken) => {
+  const resetUrl = `${clientUrl}/reset-password?token=${resetToken}`;
+  const mailOptions = {
+    from: `"ZeAlpha Support" <${process.env.EMAIL_USER}>`,
+    to: userEmail,
+    subject: `Password Reset Request`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #f59e0b;">Reset Your Password</h2>
+        <p>You requested a password reset for your ZeAlpha account.</p>
+        <p>Click the link below to reset your password:</p>
+        <div style="margin-top: 30px; text-align: center;">
+          <a href="${resetUrl}" style="background-color: #f59e0b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">Reset Password</a>
+        </div>
+        <p style="margin-top: 20px; font-size: 12px; color: #888;">This link will expire in 10 minutes.</p>
+        <p style="font-size: 12px; color: #888;">If you didn't request this, please ignore this email.</p>
       </div>
     `,
   };

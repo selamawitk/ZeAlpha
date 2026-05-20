@@ -25,8 +25,9 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       localStorage.removeItem('authUser');
-      window.location.href = '/login';
+      window.location.href = '/auth';
     }
     return Promise.reject(error);
   }
@@ -43,11 +44,16 @@ export const registerUser = async (firstName, lastName, email, password, role = 
 };
 
 export const contributeToGift = async (giftId, amount, guestInfo) => {
-  const response = await api.post('/payments/contribute', { 
-    giftId, 
-    amount, 
-    ...guestInfo 
+  const response = await api.post('/contributions', {
+    giftId,
+    amount,
+    ...guestInfo
   });
+  return response.data;
+};
+
+export const getContributions = async () => {
+  const response = await api.get('/contributions');
   return response.data;
 };
 
@@ -82,6 +88,36 @@ export const updateContributionStatus = async (contributionId, status) => {
 
 export const fetchPendingContributions = async () => {
   const response = await api.get('/contributions?status=pending');
+  return response.data;
+};
+
+export const forgotPassword = async (email) => {
+  const response = await api.post('/users/forgot-password', { email });
+  return response.data;
+};
+
+export const resetPassword = async (token, password) => {
+  const response = await api.post('/users/reset-password', { token, password });
+  return response.data;
+};
+
+export const getNotifications = async () => {
+  const response = await api.get('/notifications');
+  return response.data;
+};
+
+export const markNotificationAsRead = async (id) => {
+  const response = await api.put(`/notifications/${id}/read`);
+  return response.data;
+};
+
+export const markAllNotificationsAsRead = async () => {
+  const response = await api.put('/notifications/read-all');
+  return response.data;
+};
+
+export const deleteNotification = async (id) => {
+  const response = await api.delete(`/notifications/${id}`);
   return response.data;
 };
 

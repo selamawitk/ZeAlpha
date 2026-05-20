@@ -1,23 +1,28 @@
 import AnalyticsCard from '../components/AnalyticsCard.jsx';
 import { useEffect, useState } from 'react';
-import { fetchPendingContributions, updateContributionStatus } from '../api/api.js';
+import { fetchPendingContributions, updateContributionStatus, fetchPlatformStats } from '../api/api.js';
 
 const AdminOverview = () => {
   const [pendingContributions, setPendingContributions] = useState([]);
+  const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadPending = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchPendingContributions();
-        setPendingContributions(data);
+        const [pendingData, statsData] = await Promise.all([
+          fetchPendingContributions(),
+          fetchPlatformStats()
+        ]);
+        setPendingContributions(pendingData);
+        setStats(statsData);
       } catch (err) {
-        console.error('Failed to load pending contributions', err);
+        console.error('Failed to load data', err);
       } finally {
         setLoading(false);
       }
     };
-    loadPending();
+    loadData();
   }, []);
 
   const handleStatusUpdate = async (id, status) => {
@@ -36,8 +41,8 @@ const AdminOverview = () => {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <AnalyticsCard title="Total bookings" value="18.4k" subtitle="All weddings served across the platform." percent={76} accent="bg-amber-100 text-amber-800" />
-        <AnalyticsCard title="Live contributions" value="ETB 1.2M" subtitle="Total contributed across active registries." percent={84} accent="bg-amber-100 text-amber-800" />
+        <AnalyticsCard title="Total weddings" value={stats.weddingCount || 0} subtitle="All weddings served across the platform." percent={76} accent="bg-amber-100 text-amber-800" />
+        <AnalyticsCard title="Total contributions" value={`ETB ${stats.totalRaised?.toLocaleString() || 0}`} subtitle="Total contributed across active registries." percent={84} accent="bg-amber-100 text-amber-800" />
         <AnalyticsCard title="Fulfillment health" value="92%" subtitle="Vendor order completion success rate." percent={92} accent="bg-emerald-100 text-emerald-800" />
       </div>
 

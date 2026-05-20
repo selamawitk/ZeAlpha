@@ -42,15 +42,19 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
         screenshotUrl,
       });
 
-      // Handle Stripe flow for card payments
-      if (paymentMethod === 'card' && response.clientSecret) {
-        // Here you would typically use the Stripe library to confirm the payment:
-        // const result = await stripe.confirmCardPayment(response.clientSecret);
-        // if (result.error) throw new Error(result.error.message);
-        console.log('Stripe flow initiated with:', response.clientSecret);
-      }
+      // Save to localStorage for guest history
+      const existing = JSON.parse(localStorage.getItem('guestContributions') || '[]');
+      existing.push({
+        giftName: gift.name,
+        amount: Number(amount),
+        paymentMethod,
+        guestName,
+        message,
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem('guestContributions', JSON.stringify(existing));
 
-      navigate('/thank-you', { state: { gift: response.data?.gift || gift } });
+      navigate('/thank-you', { state: { gift: response.gift || gift } });
     } catch (apiError) {
       setError(apiError.response?.data?.message || 'Unable to submit contribution. Please try again.');
     } finally {

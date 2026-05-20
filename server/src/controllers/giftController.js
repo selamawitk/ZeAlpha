@@ -3,162 +3,217 @@ import Wedding from '../models/Wedding.js';
 import { createDigitalCard } from '../utils/digitalCard.js';
 
 export const addGift = async (req, res) => {
-  const { weddingId, type, name, description, imageUrl, totalPrice, deliveryOptions, category, priority } = req.body;
-  const wedding = await Wedding.findById(weddingId);
-  if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+  try {
+    const { weddingId, type, name, description, imageUrl, totalPrice, deliveryOptions, category, priority } = req.body;
 
-  const gift = await Gift.create({
-    weddingId,
-    type,
-    name,
-    description,
-    imageUrl,
-    totalPrice,
-    deliveryOptions,
-    category,
-    priority: priority || 1
-  });
+    const wedding = await Wedding.findById(weddingId);
+    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
 
-  res.status(201).json(gift);
+    if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to add gifts to this wedding' });
+    }
+
+    const gift = await Gift.create({
+      weddingId,
+      type,
+      name,
+      description,
+      imageUrl,
+      totalPrice,
+      deliveryOptions,
+      category,
+      priority: priority || 1
+    });
+
+    res.status(201).json(gift);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const getGifts = async (req, res) => {
-  const { weddingId } = req.params;
-  const { maxPrice } = req.query;
+  try {
+    const { weddingId } = req.params;
+    const { maxPrice } = req.query;
 
-  const query = { weddingId };
-  if (maxPrice) {
-    query.totalPrice = { $lte: Number(maxPrice) };
+    const query = { weddingId };
+    if (maxPrice) query.totalPrice = { $lte: Number(maxPrice) };
+
+    const gifts = await Gift.find(query);
+    res.json(gifts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-
-  const gifts = await Gift.find(query);
-  res.json(gifts);
 };
 
 export const getGiftById = async (req, res) => {
-  const gift = await Gift.findById(req.params.id).populate('weddingId');
-  if (!gift) return res.status(404).json({ message: 'Gift not found' });
-  res.json(gift);
+  try {
+    const gift = await Gift.findById(req.params.id).populate('weddingId');
+    if (!gift) return res.status(404).json({ message: 'Gift not found' });
+    res.json(gift);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const getDigitalCard = async (req, res) => {
-  const gift = await Gift.findById(req.params.id).populate('weddingId');
-  if (!gift) return res.status(404).json({ message: 'Gift not found' });
-  if (!gift.digitalCardData) return res.status(404).json({ message: 'Digital card not available yet' });
-  res.json(JSON.parse(gift.digitalCardData));
+  try {
+    const gift = await Gift.findById(req.params.id).populate('weddingId');
+    if (!gift) return res.status(404).json({ message: 'Gift not found' });
+    if (!gift.digitalCardData) return res.status(404).json({ message: 'Digital card not available yet' });
+    res.json(JSON.parse(gift.digitalCardData));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const lockGift = async (req, res) => {
-  const gift = await Gift.findById(req.params.id);
-  if (!gift) return res.status(404).json({ message: 'Gift not found' });
-  if (gift.status !== 'open') {
-    return res.status(400).json({ message: 'Only open gifts can be reserved' });
+  try {
+    const gift = await Gift.findById(req.params.id);
+    if (!gift) return res.status(404).json({ message: 'Gift not found' });
+
+    if (gift.status !== 'open') {
+      return res.status(400).json({ message: 'Only open gifts can be reserved' });
+    }
+
+    const now = new Date();
+    if (gift.isLocked && gift.lockedUntil && gift.lockedUntil > now) {
+      return res.status(400).json({ message: 'Gift is already reserved' });
+    }
+
+    gift.isLocked = true;
+    gift.lockedUntil = new Date(Date.now() + 10 * 60 * 1000);
+    await gift.save();
+
+    res.json({ message: 'Gift reserved for 10 minutes', gift });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-
-  const now = new Date();
-  if (gift.isLocked && gift.lockedUntil && gift.lockedUntil > now) {
-    return res.status(400).json({ message: 'Gift is already reserved' });
-  }
-
-  gift.isLocked = true;
-  gift.lockedUntil = new Date(Date.now() + 10 * 60 * 1000);
-  await gift.save();
-
-  res.json({ message: 'Gift reserved for 10 minutes', gift });
 };
 
 export const toggleLock = async (req, res) => {
-  const gift = await Gift.findById(req.params.id);
-  if (!gift) return res.status(404).json({ message: 'Gift not found' });
+  try {
+    const gift = await Gift.findById(req.params.id);
+    if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
-  if (gift.type !== 'individual') {
-    return res.status(400).json({ message: 'Only unique gifts can be locked' });
+    if (gift.type !== 'individual') {
+      return res.status(400).json({ message: 'Only unique gifts can be locked' });
+    }
+
+    if (gift.status !== 'open') {
+      return res.status(400).json({ message: 'Only open gifts can be locked' });
+    }
+
+    const now = new Date();
+    if (gift.isLocked && gift.lockedUntil && gift.lockedUntil > now) {
+      return res.status(400).json({ message: 'Gift is already reserved' });
+    }
+
+    gift.isLocked = true;
+    gift.lockedUntil = new Date(Date.now() + 10 * 60 * 1000);
+    await gift.save();
+
+    res.json({ message: 'Gift locked for 10 minutes', gift });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-
-  if (gift.status !== 'open') {
-    return res.status(400).json({ message: 'Only open gifts can be locked' });
-  }
-
-  const now = new Date();
-  if (gift.isLocked && gift.lockedUntil && gift.lockedUntil > now) {
-    return res.status(400).json({ message: 'Gift is already reserved' });
-  }
-
-  gift.isLocked = true;
-  gift.lockedUntil = new Date(Date.now() + 10 * 60 * 1000);
-  await gift.save();
-
-  res.json({ message: 'Gift locked for 10 minutes', gift });
 };
 
 export const unlockGift = async (req, res) => {
-  const gift = await Gift.findById(req.params.id);
-  if (!gift) return res.status(404).json({ message: 'Gift not found' });
+  try {
+    const gift = await Gift.findById(req.params.id);
+    if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
-  gift.isLocked = false;
-  gift.lockedUntil = null;
-  await gift.save();
+    gift.isLocked = false;
+    gift.lockedUntil = null;
+    await gift.save();
 
-  res.json({ message: 'Gift reservation removed', gift });
+    res.json({ message: 'Gift reservation removed', gift });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const updateGiftSettlement = async (req, res) => {
-  const { deliveryOptions } = req.body;
-  const gift = await Gift.findById(req.params.id);
-  if (!gift) return res.status(404).json({ message: 'Gift not found' });
+  try {
+    const { deliveryOptions } = req.body;
 
-  const wedding = await Wedding.findById(gift.weddingId);
-  if (!wedding || new Date() < wedding.weddingDate) {
-    return res.status(400).json({ message: 'Settlement only available after wedding date' });
-  }
+    const gift = await Gift.findById(req.params.id);
+    if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
-  if (gift.currentCollected >= gift.totalPrice) {
-    gift.deliveryOptions = deliveryOptions;
-    gift.status = deliveryOptions === 'store' ? 'purchased' : 'cashedOut';
-  } else {
-    if (deliveryOptions !== 'cashout') {
-      return res.status(400).json({ message: 'Partially funded gifts can only be cashed out' });
+    const wedding = await Wedding.findById(gift.weddingId);
+    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+
+    if (new Date() < new Date(wedding.weddingDate)) {
+      return res.status(400).json({ message: 'Settlement only available after wedding date' });
     }
-    gift.deliveryOptions = 'cashout';
-    gift.status = 'cashedOut';
-  }
 
-  await gift.save();
-  res.json(gift);
+    if (gift.currentCollected >= gift.totalPrice) {
+      gift.deliveryOptions = deliveryOptions;
+      gift.status = deliveryOptions === 'store' ? 'purchased' : 'cashedOut';
+    } else {
+      if (deliveryOptions !== 'cashout') {
+        return res.status(400).json({ message: 'Partially funded gifts can only be cashed out' });
+      }
+      gift.deliveryOptions = 'cashout';
+      gift.status = 'cashedOut';
+    }
+
+    await gift.save();
+    res.json(gift);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const getWeddingRegistry = async (req, res) => {
-  const { slug } = req.params;
-  const wedding = await Wedding.findOne({ slug }).populate('couple', 'name');
-  if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+  try {
+    const { slug } = req.params;
 
-  const gifts = await Gift.find({ weddingId: wedding._id });
-  res.json({ wedding, gifts });
+    const wedding = await Wedding.findOne({ slug }).populate('couple', 'name email');
+    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+
+    const gifts = await Gift.find({ weddingId: wedding._id });
+
+    const registry = {
+      _id: wedding._id,
+      slug: wedding.slug,
+      coupleId: wedding.couple,
+      weddingName: wedding.weddingName,
+      gifts
+    };
+
+    res.json({ success: true, registry });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const getGiftRecommendations = async (req, res) => {
-  const { weddingId } = req.params;
-  const { maxPrice } = req.query;
+  try {
+    const { weddingId } = req.params;
+    const { maxPrice } = req.query;
 
-  const query = { weddingId, status: 'open' };
-  if (maxPrice) {
-    query.totalPrice = { $lte: Number(maxPrice) };
+    const query = { weddingId, status: 'open' };
+    if (maxPrice) query.totalPrice = { $lte: Number(maxPrice) };
+
+    const gifts = await Gift.find(query)
+      .sort({ currentCollected: -1, priority: -1 })
+      .limit(6);
+
+    const suggestions = gifts.map((gift) => ({
+      id: gift._id,
+      name: gift.name,
+      type: gift.type,
+      collected: gift.currentCollected,
+      totalPrice: gift.totalPrice,
+      remaining: gift.totalPrice - gift.currentCollected,
+      progress: gift.totalPrice > 0 ? Math.round((gift.currentCollected / gift.totalPrice) * 100) : 0,
+      category: gift.category
+    }));
+
+    res.json({ suggestions });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-
-  const gifts = await Gift.find(query)
-    .sort({ currentCollected: -1, priority: -1 })
-    .limit(6);
-
-  const suggestions = gifts.map((gift) => ({
-    id: gift._id,
-    name: gift.name,
-    type: gift.type,
-    collected: gift.currentCollected,
-    totalPrice: gift.totalPrice,
-    remaining: gift.totalPrice - gift.currentCollected,
-    progress: gift.totalPrice > 0 ? Math.round((gift.currentCollected / gift.totalPrice) * 100) : 0,
-    category: gift.category
-  }));
-
-  res.json({ suggestions });
 };

@@ -1,36 +1,22 @@
-import cloudinary from 'cloudinary';
 import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-// Configure Cloudinary
-cloudinary.v2.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadDir = path.join(__dirname, '../../uploads');
+fs.mkdirSync(uploadDir, { recursive: true });
 
-// Multer storage for Cloudinary
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary.v2,
-  params: {
-    folder: 'zealpha',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp'],
-  },
+const storage = multer.diskStorage({
+  destination: () => uploadDir,
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '-');
+    cb(null, `${timestamp}-${sanitizedName}`);
+  }
 });
 
 const upload = multer({ storage });
-
-// Utility function to upload image buffer
-export const uploadImage = (buffer) => {
-  return new Promise((resolve, reject) => {
-    cloudinary.v2.uploader.upload_stream(
-      { folder: 'zealpha' },
-      (error, result) => {
-        if (error) reject(error);
-        else resolve(result.secure_url);
-      }
-    ).end(buffer);
-  });
-};
 
 export { upload };

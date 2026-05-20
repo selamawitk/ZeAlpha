@@ -3,15 +3,26 @@ import Contribution from '../models/Contribution.js';
 import Payment from '../models/Payment.js';
 import Wedding from '../models/Wedding.js';
 import User from '../models/User.js';
-import { emitGiftUpdate, emitActivity, emitNotification } from '../services/socketService.js';
+import { emitGiftUpdate, emitActivity, emitNotification, emitNewContribution } from '../services/socketService.js';
 import { createDigitalCard } from '../utils/digitalCard.js';
 import { sendGiftReceipt, sendWeddingFundedAlert } from '../services/emailService.js';
+import Notification from '../models/Notification.js';
+
+const CONTRIBUTION_METHODS = ['stripe', 'telebirr', 'bank_transfer'];
 
 export const createContribution = async (req, res) => {
-  const { giftId, amount, paymentMethod, transactionId, message, isAnonymous, screenshotUrl } = req.body;
+  const { giftId, amount, paymentMethod, transactionId, message, isAnonymous, screenshotUrl, guestName, guestPhone } = req.body;
 
   if (!giftId || !amount || !paymentMethod) {
     return res.status(400).json({ message: 'giftId, amount, and paymentMethod are required' });
+  }
+
+  if (!CONTRIBUTION_METHODS.includes(paymentMethod)) {
+    return res.status(400).json({ message: 'Invalid payment method' });
+  }
+
+  if ((paymentMethod === 'telebirr' || paymentMethod === 'bank_transfer') && !screenshotUrl) {
+    return res.status(400).json({ message: 'A payment screenshot is required for manual payments' });
   }
 
   const gift = await Gift.findById(giftId).populate('weddingId');
@@ -41,7 +52,8 @@ export const createContribution = async (req, res) => {
 
   const contributorEntry = {
     guestId: req.user._id,
-    name: req.user.name,
+    name: guestName || req.user.name,
+    phone: guestPhone,
     amount,
     message,
     isAnonymous: !!isAnonymous
@@ -89,6 +101,7 @@ export const createContribution = async (req, res) => {
     weddingId: gift.weddingId._id,
     amount,
     message,
+    guestPhone,
     paymentMethod,
     screenshotUrl,
     transactionId,
@@ -120,7 +133,6 @@ export const createContribution = async (req, res) => {
     await wedding.save();
   }
 
-  // --- EMAIL TRIGGER (INSTANT) ---
   if (isInstant) {
     try {
       await sendGiftReceipt(req.user.email, req.user.name, amount, updatedGift.name, updatedGift.digitalCardUrl);
@@ -129,7 +141,7 @@ export const createContribution = async (req, res) => {
         if (couple) await sendWeddingFundedAlert(couple.email, updatedGift.name, updatedGift.totalPrice);
       }
     } catch (err) {
-      console.error("Email delivery failed:", err);
+      console.error('Email delivery failed:', err);
     }
   }
 
@@ -143,17 +155,44 @@ export const createContribution = async (req, res) => {
   };
 
   emitGiftUpdate(updatedGift);
+  emitNewContribution(contribution);
   emitActivity(activity);
+
+  // Save notification to DB
+  await Notification.create({
+    recipient: updatedGift.weddingId.couple,
+    weddingId: updatedGift.weddingId._id,
+    type: 'contribution',
+    title: 'New contribution',
+    message: `${req.user.name} contributed ${amount} ETB to ${updatedGift.name}`,
+    link: `/dashboard`
+  });
+
   emitNotification({
     recipient: updatedGift.weddingId.couple,
     weddingId: updatedGift.weddingId._id,
     type: 'contribution',
     title: 'New contribution',
     message: `${req.user.name} contributed ${amount} ETB to ${updatedGift.name}`,
-    link: `/weddings/${updatedGift.weddingId._id}/gifts/${updatedGift._id}`
+    link: `/dashboard`
   });
 
   res.status(201).json({ gift: updatedGift, contribution });
+};
+
+export const getContributionById = async (req, res) => {
+  const contribution = await Contribution.findById(req.params.id)
+    .populate('giftId', 'name totalPrice')
+    .populate('guestId', 'name email')
+    .populate('weddingId', 'weddingName');
+
+  if (!contribution) return res.status(404).json({ message: 'Contribution not found' });
+
+  if (req.user.role !== 'admin' && contribution.guestId._id.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: 'Not authorized to access this contribution' });
+  }
+
+  res.json(contribution);
 };
 
 export const updateContributionStatus = async (req, res) => {
@@ -166,42 +205,45 @@ export const updateContributionStatus = async (req, res) => {
   if (!contribution) return res.status(404).json({ message: 'Contribution not found' });
 
   const oldStatus = contribution.status;
+  if (oldStatus === status) {
+    return res.status(400).json({ message: 'Contribution already has that status' });
+  }
+
   contribution.status = status;
   await contribution.save();
 
-  // --- ADMIN APPROVAL LOGIC ---
   if (status === 'completed' && oldStatus !== 'completed') {
-    const gift = await Gift.findById(contribution.giftId._id);
-    if (gift) {
-      gift.currentCollected += contribution.amount;
-      gift.contributors.push({
-        guestId: contribution.guestId._id,
-        name: contribution.guestId.name,
-        amount: contribution.amount,
-        message: contribution.message,
-        isAnonymous: contribution.isAnonymous,
-        timestamp: contribution.createdAt
-      });
-
-      let fundedAlertSent = false;
-      if (gift.currentCollected >= gift.totalPrice) {
-        gift.status = 'fullyFunded';
-        fundedAlertSent = true;
-      }
-      await gift.save();
-
-      // --- EMAIL TRIGGER (MANUAL VERIFIED) ---
-      try {
-        await sendGiftReceipt(contribution.guestId.email, contribution.guestId.name, contribution.amount, gift.name, gift.digitalCardUrl);
-        if (fundedAlertSent) {
-          const couple = await User.findById(contribution.weddingId.couple);
-          if (couple) await sendWeddingFundedAlert(couple.email, gift.name, gift.totalPrice);
+    const giftUpdate = {
+      $inc: { currentCollected: contribution.amount },
+      $push: {
+        contributors: {
+          guestId: contribution.guestId._id,
+          name: contribution.guestId.name,
+          amount: contribution.amount,
+          message: contribution.message,
+          isAnonymous: contribution.isAnonymous,
+          timestamp: contribution.createdAt
         }
-      } catch (err) {
-        console.error("Manual verification email failed:", err);
       }
+    };
 
-      emitGiftUpdate(gift);
+    const updatedGift = await Gift.findByIdAndUpdate(contribution.giftId._id, giftUpdate, { new: true });
+    if (updatedGift && updatedGift.currentCollected >= updatedGift.totalPrice && updatedGift.status !== 'fullyFunded') {
+      updatedGift.status = 'fullyFunded';
+      await updatedGift.save();
+    }
+
+    try {
+      if (updatedGift) {
+        await sendGiftReceipt(contribution.guestId.email, contribution.guestId.name, contribution.amount, updatedGift.name, updatedGift.digitalCardUrl);
+        if (updatedGift.currentCollected >= updatedGift.totalPrice) {
+          const couple = await User.findById(contribution.weddingId.couple);
+          if (couple) await sendWeddingFundedAlert(couple.email, updatedGift.name, updatedGift.totalPrice);
+        }
+        emitGiftUpdate(updatedGift);
+      }
+    } catch (err) {
+      console.error('Manual verification email failed:', err);
     }
 
     const wedding = await Wedding.findById(contribution.weddingId._id);
@@ -218,15 +260,29 @@ export const updateContributionStatus = async (req, res) => {
     }
   }
 
+  emitNewContribution(contribution);
   res.json(contribution);
 };
 
 export const getContributions = async (req, res) => {
-  const contributions = await Contribution.find()
+  const query = {};
+  if (req.query.status) {
+    query.status = req.query.status;
+  }
+  if (req.query.giftId) {
+    query.giftId = req.query.giftId;
+  }
+  if (req.query.weddingId) {
+    query.weddingId = req.query.weddingId;
+  }
+
+  const contributions = await Contribution.find(query)
     .populate('giftId', 'name totalPrice')
     .populate('guestId', 'name email');
   res.json(contributions);
 };
+
+
 
 export const refundContribution = async (req, res) => {
   const contribution = await Contribution.findById(req.params.id);

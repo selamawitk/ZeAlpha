@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const contributorSchema = new mongoose.Schema({
   guestId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
+  phone: { type: String },
   amount: { type: Number, required: true },
   message: { type: String, maxlength: 200 },
   isAnonymous: { type: Boolean, default: false }, // For the social feed
@@ -72,5 +73,8 @@ giftSchema.virtual('isAlmostComplete').get(function() {
 // Ensure virtual fields are serialized
 giftSchema.set('toJSON', { virtuals: true });
 giftSchema.set('toObject', { virtuals: true });
+
+giftSchema.index({ weddingId: 1 });
+giftSchema.index({ status: 1 });
 
 export default mongoose.model('Gift', giftSchema);

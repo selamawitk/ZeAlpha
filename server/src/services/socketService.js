@@ -1,11 +1,13 @@
 import { Server } from 'socket.io';
 let io;
 
+const clientOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
+
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173",
-      methods: ["GET", "POST"],
+      origin: clientOrigin,
+      methods: ['GET', 'POST'],
       credentials: true,
     },
     transports: ['websocket', 'polling']
@@ -32,6 +34,11 @@ export const emitGiftUpdate = (gift) => {
   if (gift.weddingId) {
     io.to(String(gift.weddingId)).emit('gift:update', gift);
   }
+};
+
+export const emitNewContribution = (contribution) => {
+  if (!io) return;
+  io.emit('newContribution', contribution);
 };
 
 export const emitActivity = (activity) => {

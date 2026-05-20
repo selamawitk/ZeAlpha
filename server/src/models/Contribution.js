@@ -18,6 +18,7 @@ const contributionSchema = new mongoose.Schema({
   },
   amount: { type: Number, required: true },
   message: { type: String, maxlength: 500 },
+  guestPhone: { type: String },
   
   // Payment Logic
   paymentMethod: { 
@@ -35,5 +36,9 @@ const contributionSchema = new mongoose.Schema({
   
   isAnonymous: { type: Boolean, default: false } // Privacy toggle
 }, { timestamps: true });
+
+contributionSchema.index({ giftId: 1 });
+contributionSchema.index({ guestId: 1 });
+contributionSchema.index({ status: 1 });
 
 export default mongoose.model('Contribution', contributionSchema);

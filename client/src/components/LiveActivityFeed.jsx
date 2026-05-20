@@ -18,11 +18,11 @@ const LiveActivityFeed = () => {
       ]);
     };
 
-    socket.on('liveActivity', onActivity);
+    socket.on('activity:update', onActivity);
     socket.on('gift:update', onActivity);
 
     return () => {
-      socket.off('liveActivity', onActivity);
+      socket.off('activity:update', onActivity);
       socket.off('gift:update', onActivity);
     };
   }, [socket]);

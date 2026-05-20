@@ -1,6 +1,8 @@
 import Wedding from '../models/Wedding.js';
 import Gift from '../models/Gift.js';
 import Contribution from '../models/Contribution.js';
+import Payment from '../models/Payment.js';
+import User from '../models/User.js';
 
 const createSlug = (name, id) => {
   const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -18,6 +20,13 @@ export const createWedding = async (req, res) => {
     payoutSettings,
     slug: createSlug(weddingName, req.user._id)
   });
+
+  const user = await User.findById(req.user._id);
+  if (user) {
+    user.managedWedding = wedding._id;
+    await user.save();
+  }
+
   res.status(201).json(wedding);
 };
 
@@ -39,6 +48,10 @@ export const updateWedding = async (req, res) => {
   const wedding = await Wedding.findById(req.params.id);
   if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
 
+  if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: 'Not authorized to update this wedding' });
+  }
+
   wedding.weddingName = req.body.weddingName || wedding.weddingName;
   wedding.weddingDate = req.body.weddingDate || wedding.weddingDate;
   wedding.description = req.body.description || wedding.description;
@@ -52,8 +65,24 @@ export const updateWedding = async (req, res) => {
 export const deleteWedding = async (req, res) => {
   const wedding = await Wedding.findById(req.params.id);
   if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+
+  if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: 'Not authorized to delete this wedding' });
+  }
+
+  const giftIds = (await Gift.find({ weddingId: wedding._id }).select('_id')).map((gift) => gift._id);
   await Gift.deleteMany({ weddingId: wedding._id });
   await Contribution.deleteMany({ weddingId: wedding._id });
+  await Payment.deleteMany({ giftId: { $in: giftIds } });
+
+  if (req.user.managedWedding?.toString() === wedding._id.toString()) {
+    const user = await User.findById(req.user._id);
+    if (user) {
+      user.managedWedding = undefined;
+      await user.save();
+    }
+  }
+
   await wedding.remove();
   res.json({ message: 'Wedding removed' });
 };

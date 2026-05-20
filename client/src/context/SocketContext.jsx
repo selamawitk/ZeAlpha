@@ -16,7 +16,7 @@ export const SocketProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useLayoutEffect(() => {
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
     
     const newSocket = io(socketUrl, {
       transports: ['websocket'],

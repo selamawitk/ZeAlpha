@@ -49,7 +49,7 @@ const Landing = () => {
 
               <div className="flex flex-col gap-4 sm:flex-row">
                 <Link
-                  to="/auth"
+                  to="/registry/preview"
                   className="rounded-full bg-primary px-8 py-4 text-center font-medium text-white shadow-lg transition hover:scale-105 hover:shadow-xl"
                 >
                   Start Your Registry

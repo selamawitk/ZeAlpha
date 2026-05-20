@@ -28,4 +28,7 @@ const weddingSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+weddingSchema.index({ slug: 1 });
+weddingSchema.index({ couple: 1 });
+
 export default mongoose.model('Wedding', weddingSchema);
