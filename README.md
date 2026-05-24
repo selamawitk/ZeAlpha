@@ -1,4 +1,6 @@
-💍 ZeAlpha — Collaborative Wedding Gift Platform
+💍 ZeAlpha 
+ 
+Collaborative Wedding Gift Platform
 "Give smarter — guests collaborate, track, and send meaningful gifts together."
 
 Let’s be honest: traditional wedding gifting is broken. In many cultures, especially here in Ethiopia, couples end up with five identical kettles or ten cheap dinner sets they don't need, while big-ticket milestones—like a 70,000 ETB refrigerator or a quality sofa—remain unbought because they are too expensive for a single guest.
@@ -6,11 +8,13 @@ Let’s be honest: traditional wedding gifting is broken. In many cultures, espe
 ZeAlpha changes that. It's a Social FinTech platform that transforms traditional wedding registries into a crowdfunded, real-time interactive experience. Instead of buying alone, guests can pool their money together to fund gifts that actually matter, completely eliminating duplicate purchases and real-world coordination friction.
 
  The Big Shift
+
 Before: Guests buy gifts individually ➔ expensive items are avoided ➔ duplicate gifts happen constantly ➔ zero coordination or visibility.
 
 Now: Everyone sees the registry in real-time ➔ friends collaborate on major milestones ➔ duplicates are blocked completely ➔ gifting becomes a shared, social experience.
 
 🔥 Killer Features
+
 1.  Collaborative Gift Funding & Auto-Splitting
 Instead of buying a massive appliance solo, a group of friends can team up. If a fridge costs 70,000 ETB, multiple guests can contribute whatever fits their budget. The system tracks every contribution with a live progress bar and automatically locks the item once it hits 100%.
 
