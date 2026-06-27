@@ -4,6 +4,17 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import api, { uploadImage } from '../api/api.js';
 
+const waitForServer = async (maxRetries = 10, delay = 2000) => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await api.get('/health');
+      return;
+    } catch {
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+};
+
 const DashboardManage = () => {
   const { user } = useAuth();
 
@@ -77,14 +88,15 @@ const DashboardManage = () => {
   const textMuted = 'text-[#6f6257]';
 
   useEffect(() => {
-    api.get('/health').catch(() => {});
     setError('');
 
-    const fetchGifts = async () => {
+    const load = async () => {
       if (!weddingId || weddingId.length < 5) {
         setLoadingGifts(false);
         return;
       }
+
+      await waitForServer();
 
       try {
         const response = await api.get(
@@ -102,7 +114,7 @@ const DashboardManage = () => {
       }
     };
 
-    fetchGifts();
+    load();
   }, [weddingId]);
 
   const handleChange = (event) => {
@@ -182,6 +194,8 @@ const DashboardManage = () => {
     setUploadPhase('');
 
     try {
+      await waitForServer();
+
       let imageUrl = '';
 
       if (form.imageFile) {
