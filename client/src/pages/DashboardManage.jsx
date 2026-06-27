@@ -113,16 +113,16 @@ const DashboardManage = () => {
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const max = 1200;
       let { width, height } = img;
+      const max = 800;
       if (width > max || height > max) {
-        if (width > height) { height = (height / width) * max; width = max; }
-        else { width = (width / height) * max; height = max; }
+        if (width > height) { height = Math.round((height / width) * max); width = max; }
+        else { width = Math.round((width / height) * max); height = max; }
       }
       const canvas = document.createElement('canvas');
       canvas.width = width; canvas.height = height;
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      canvas.toBlob((blob) => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.8);
+      canvas.toBlob((blob) => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })), 'image/jpeg', 0.6);
     };
     img.src = url;
   });
@@ -445,7 +445,7 @@ const DashboardManage = () => {
                   className={`flex-1 rounded-2xl ${goldGradient} px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-[#8B5A00]/20 transition-all duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {isSubmitting
-                    ? (uploadPhase || 'Saving...')
+                    ? <span className="inline-flex items-center gap-2"><span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>{uploadPhase || 'Saving...'}</span>
                     : editGiftId ? 'Update Gift' : 'Save Gift'}
                 </button>
 
