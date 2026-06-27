@@ -20,26 +20,32 @@ export const getPublicPlatformStats = async (req, res) => {
 };
 
 export const getPlatformAnalytics = async (req, res) => {
-  const weddings = await Wedding.find();
-  const gifts = await Gift.find();
-  const contributions = await Contribution.find();
+  const [weddingCount, giftCount, contributionCount, totalRaisedResult, mostFundedGifts] = await Promise.all([
+    Wedding.countDocuments(),
+    Gift.countDocuments(),
+    Contribution.countDocuments(),
+    Gift.aggregate([
+      { $group: { _id: null, total: { $sum: '$currentCollected' } } }
+    ]),
+    Gift.aggregate([
+      { $sort: { currentCollected: -1 } },
+      { $limit: 5 },
+      { $project: { _id: 1, name: 1, currentCollected: 1, totalPrice: 1 } }
+    ])
+  ]);
 
-  const totalRaised = gifts.reduce((sum, gift) => sum + gift.currentCollected, 0);
-  const mostFundedGifts = gifts
-    .sort((a, b) => b.currentCollected - a.currentCollected)
-    .slice(0, 5)
-    .map((gift) => ({
-      id: gift._id,
-      name: gift.name,
-      collected: gift.currentCollected,
-      totalPrice: gift.totalPrice
-    }));
+  const totalRaised = totalRaisedResult[0]?.total || 0;
 
   res.json({
-    weddingCount: weddings.length,
-    giftCount: gifts.length,
-    contributionCount: contributions.length,
+    weddingCount,
+    giftCount,
+    contributionCount,
     totalRaised,
-    mostFundedGifts
+    mostFundedGifts: mostFundedGifts.map(g => ({
+      id: g._id,
+      name: g.name,
+      collected: g.currentCollected,
+      totalPrice: g.totalPrice
+    }))
   });
 };

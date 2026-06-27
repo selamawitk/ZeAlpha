@@ -1,10 +1,13 @@
 import Gift from '../models/Gift.js';
 import Wedding from '../models/Wedding.js';
 import { createDigitalCard } from '../utils/digitalCard.js';
+import { emitGiftUpdate, emitActivity, emitGiftSurge } from '../services/socketService.js';
+import Notification from '../models/Notification.js';
+import { emitNotification } from '../services/socketService.js';
 
 export const addGift = async (req, res) => {
   try {
-    const { weddingId, type, name, description, imageUrl, totalPrice, deliveryOptions, category, priority } = req.body;
+    const { weddingId, type, name, description, imageUrl, totalPrice, deliveryOptions, category, priority, fulfillmentPreference, vendorId, vendorProductId } = req.body;
 
     const wedding = await Wedding.findById(weddingId);
     if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
@@ -21,8 +24,20 @@ export const addGift = async (req, res) => {
       imageUrl,
       totalPrice,
       deliveryOptions,
+      fulfillmentPreference: fulfillmentPreference || 'cash',
       category,
-      priority: priority || 1
+      priority: priority || 1,
+      vendorId: fulfillmentPreference === 'vendor' ? vendorId : null,
+      vendorProductId: fulfillmentPreference === 'vendor' ? vendorProductId : null,
+    });
+
+    emitGiftUpdate(gift);
+    emitActivity({
+      weddingId: String(weddingId),
+      title: `New gift added: ${gift.name}`,
+      message: `${gift.name} was added to the registry (${gift.type})`,
+      type: 'gift_created',
+      timestamp: new Date()
     });
 
     res.status(201).json(gift);
@@ -33,8 +48,12 @@ export const addGift = async (req, res) => {
 
 export const getGifts = async (req, res) => {
   try {
-    const { weddingId } = req.params;
+    const weddingId = req.params.weddingId || req.query.weddingId;
     const { maxPrice } = req.query;
+
+    if (!weddingId) {
+      return res.status(400).json({ message: 'Wedding ID is required' });
+    }
 
     const query = { weddingId };
     if (maxPrice) query.totalPrice = { $lte: Number(maxPrice) };
@@ -56,6 +75,70 @@ export const getGiftById = async (req, res) => {
   }
 };
 
+export const updateGift = async (req, res) => {
+  try {
+    const gift = await Gift.findById(req.params.id);
+    if (!gift) return res.status(404).json({ message: 'Gift not found' });
+
+    const wedding = await Wedding.findById(gift.weddingId);
+    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+
+    if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const { name, description, imageUrl, totalPrice, deliveryOptions, category, priority, fulfillmentPreference, vendorId, vendorProductId } = req.body;
+    if (name) gift.name = name;
+    if (description !== undefined) gift.description = description;
+    if (imageUrl !== undefined) gift.imageUrl = imageUrl;
+    if (totalPrice) {
+      if (Number(totalPrice) < gift.currentCollected) {
+        return res.status(400).json({ message: `Total price cannot be less than the already collected amount (${gift.currentCollected} ETB)` });
+      }
+      gift.totalPrice = Number(totalPrice);
+    }
+    if (deliveryOptions) gift.deliveryOptions = deliveryOptions;
+    if (fulfillmentPreference) gift.fulfillmentPreference = fulfillmentPreference;
+    if (category) gift.category = category;
+    if (priority) gift.priority = priority;
+    if (fulfillmentPreference === 'vendor') {
+      gift.vendorId = vendorId || null;
+      gift.vendorProductId = vendorProductId || null;
+    } else {
+      gift.vendorId = null;
+      gift.vendorProductId = null;
+    }
+
+    await gift.save();
+    emitGiftUpdate(gift);
+    res.json(gift);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteGift = async (req, res) => {
+  try {
+    const gift = await Gift.findById(req.params.id);
+    if (!gift) return res.status(404).json({ message: 'Gift not found' });
+
+    const wedding = await Wedding.findById(gift.weddingId);
+    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+
+    if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    await Gift.findByIdAndDelete(req.params.id);
+    await Contribution.deleteMany({ giftId: req.params.id });
+    await Payment.deleteMany({ giftId: req.params.id });
+
+    res.json({ message: 'Gift removed' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getDigitalCard = async (req, res) => {
   try {
     const gift = await Gift.findById(req.params.id).populate('weddingId');
@@ -67,51 +150,21 @@ export const getDigitalCard = async (req, res) => {
   }
 };
 
-export const lockGift = async (req, res) => {
-  try {
-    const gift = await Gift.findById(req.params.id);
-    if (!gift) return res.status(404).json({ message: 'Gift not found' });
-
-    if (gift.status !== 'open') {
-      return res.status(400).json({ message: 'Only open gifts can be reserved' });
-    }
-
-    const now = new Date();
-    if (gift.isLocked && gift.lockedUntil && gift.lockedUntil > now) {
-      return res.status(400).json({ message: 'Gift is already reserved' });
-    }
-
-    gift.isLocked = true;
-    gift.lockedUntil = new Date(Date.now() + 10 * 60 * 1000);
-    await gift.save();
-
-    res.json({ message: 'Gift reserved for 10 minutes', gift });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 export const toggleLock = async (req, res) => {
   try {
-    const gift = await Gift.findById(req.params.id);
-    if (!gift) return res.status(404).json({ message: 'Gift not found' });
-
-    if (gift.type !== 'individual') {
-      return res.status(400).json({ message: 'Only unique gifts can be locked' });
+    const lockedUntil = new Date(Date.now() + 10 * 60 * 1000);
+    const gift = await Gift.findOneAndUpdate(
+      { _id: req.params.id, type: 'individual', status: 'open', isLocked: false },
+      { $set: { isLocked: true, lockedUntil } },
+      { new: true }
+    );
+    if (!gift) {
+      const existing = await Gift.findById(req.params.id);
+      if (!existing) return res.status(404).json({ message: 'Gift not found' });
+      if (existing.type !== 'individual') return res.status(400).json({ message: 'Only unique gifts can be locked' });
+      if (existing.status !== 'open') return res.status(400).json({ message: 'Only open gifts can be locked' });
+      return res.status(409).json({ message: 'Gift is already reserved' });
     }
-
-    if (gift.status !== 'open') {
-      return res.status(400).json({ message: 'Only open gifts can be locked' });
-    }
-
-    const now = new Date();
-    if (gift.isLocked && gift.lockedUntil && gift.lockedUntil > now) {
-      return res.status(400).json({ message: 'Gift is already reserved' });
-    }
-
-    gift.isLocked = true;
-    gift.lockedUntil = new Date(Date.now() + 10 * 60 * 1000);
-    await gift.save();
 
     res.json({ message: 'Gift locked for 10 minutes', gift });
   } catch (error) {
@@ -127,6 +180,8 @@ export const unlockGift = async (req, res) => {
     gift.isLocked = false;
     gift.lockedUntil = null;
     await gift.save();
+
+    emitGiftUpdate(gift);
 
     res.json({ message: 'Gift reservation removed', gift });
   } catch (error) {
@@ -160,6 +215,16 @@ export const updateGiftSettlement = async (req, res) => {
     }
 
     await gift.save();
+
+    emitGiftUpdate(gift);
+    emitActivity({
+      weddingId: String(gift.weddingId._id || gift.weddingId),
+      title: `Gift settled: ${gift.name}`,
+      message: `${gift.name} was settled as ${deliveryOptions}`,
+      type: 'gift_settled',
+      timestamp: new Date()
+    });
+
     res.json(gift);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -184,6 +249,25 @@ export const getWeddingRegistry = async (req, res) => {
     };
 
     res.json({ success: true, registry });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getSurgingGifts = async (req, res) => {
+  try {
+    const { weddingId } = req.params;
+    const query = { weddingId, status: 'open' };
+    const gifts = await Gift.find(query);
+    const surging = gifts.filter(g => {
+      const progress = g.totalPrice > 0 ? (g.currentCollected / g.totalPrice) * 100 : 0;
+      return progress > 80 && g.status === 'open';
+    }).map(g => ({
+      ...g.toObject(),
+      surgeProgress: Math.round((g.currentCollected / g.totalPrice) * 100),
+      remainingAmount: g.totalPrice - g.currentCollected
+    }));
+    res.json(surging);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

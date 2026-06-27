@@ -1,10 +1,31 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import authImage from '../assets/images/auth wedding page.png';
 
+const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
+
+const RoleCard = ({ label, description, selected, onSelect, icon }) => (
+  <button
+    type="button"
+    onClick={onSelect}
+    className={`flex flex-1 flex-col items-center gap-1.5 rounded-2xl border-2 p-3.5 transition-all duration-200 ${
+      selected
+        ? 'border-[#B8860B] bg-[#B8860B]/10 shadow-md'
+        : 'border-[#e5d7c4] bg-white/40 hover:border-[#d4a843]/50'
+    }`}
+  >
+    <span className="text-2xl">{icon}</span>
+    <span className={`text-sm font-bold ${selected ? 'text-[#8B5A00]' : 'text-[#6f6257]'}`}>{label}</span>
+    <span className="text-[10px] text-[#8c755e] leading-tight">{description}</span>
+  </button>
+);
+
 const Auth = () => {
   const [mode, setMode] = useState('login');
+  const [role, setRole] = useState('couple');
+  const [loginStep, setLoginStep] = useState('role');
+  const [loginRole, setLoginRole] = useState('couple');
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
@@ -21,6 +42,7 @@ const Auth = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
     setLoading(true);
     setError('');
     setSuccess('');
@@ -34,77 +56,120 @@ const Auth = () => {
         } else if (userData.role === 'couple') {
           navigate('/dashboard');
         } else {
-          navigate('/');
+          navigate('/guest');
         }
       } else {
         const newUser = await register(
           form.firstName,
           form.lastName,
           form.email,
-          form.password
+          form.password,
+          role
         );
+
         setSuccess('Welcome to ZeAlpha!');
+
         setTimeout(() => {
           if (newUser.role === 'admin') {
             navigate('/admin');
           } else if (newUser.role === 'couple') {
             navigate('/dashboard');
           } else {
-            navigate('/');
+            navigate('/guest');
           }
-        }, 1500);
+        }, 1200);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Authentication failed');
+      setError(err.response?.data?.message || err.message || 'Authentication failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const btnGradient = "bg-gradient-to-r from-[#d4af37] via-[#9a793b] to-[#815e08]";
+  const switchMode = (newMode) => {
+    setMode(newMode);
+    setError('');
+    setSuccess('');
+    setLoginStep('role');
+    setForm({ firstName: '', lastName: '', email: '', password: '' });
+  };
+
+  const handleLoginRoleSelect = (selectedRole) => {
+    setLoginRole(selectedRole);
+    setLoginStep('form');
+  };
+
+  const handleBack = () => {
+    setLoginStep('role');
+    setError('');
+  };
+
+  const getHeading = () => {
+    if (mode === 'signup') return 'Create Account';
+    if (loginStep === 'role') return 'Welcome Back';
+    return loginRole === 'couple' ? 'Couple Login' : 'Guest Login';
+  };
+
+  const getSubtitle = () => {
+    if (mode === 'signup') return 'Start your luxury registry journey';
+    if (loginStep === 'role') return "Choose how you'd like to continue";
+    return loginRole === 'couple'
+      ? 'Access your couple dashboard'
+      : 'Browse and contribute to weddings';
+  };
 
   return (
-    <div className="relative h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#fdfcfb] via-white to-[#f3f1ec] px-6 overflow-hidden">
-      
-      <div className="absolute w-[600px] h-[600px] bg-rose-100/20 blur-[120px] rounded-full -top-32 -left-32 animate-pulse pointer-events-none"></div>
-      <div className="absolute w-[600px] h-[600px] bg-amber-50/30 blur-[120px] rounded-full -bottom-32 -right-32 pointer-events-none"></div>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#f7f2ea] via-[#f9f5ef] to-[#eadfce] px-6 py-6">
 
-      <div className="relative w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-8">
+      {/* Background Glow */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[#d4af37]/10 blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-[#c49b52]/10 blur-3xl"></div>
+      </div>
 
-        <div className="hidden md:flex w-1/2 justify-center animate-fadeUp">
-          <div className="relative w-full max-w-[480px] h-[520px] rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] group border border-white/20">
+      {/* Main Wrapper */}
+      <div className="relative z-10 flex w-full max-w-[1180px] flex-col items-center justify-center gap-[80px] lg:flex-row lg:items-center">
+
+        {/* Image Section */}
+        <div className="hidden lg:flex lg:w-[48%]">
+          <div className="relative h-[540px] w-full overflow-hidden rounded-[30px] border border-[#e4d5c1] bg-white/40 shadow-[0_14px_40px_rgba(120,90,40,0.14)] backdrop-blur-xl">
+
             <img
               src={authImage}
-              alt="Auth Visual"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              alt="Wedding"
+              className="h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+            <div className="absolute inset-0 bg-gradient-to-t from-[#2f1f12]/10 via-transparent to-transparent"></div>
           </div>
         </div>
 
-        <div className="w-full md:w-1/2 flex justify-center animate-fadeUp delay-200">
-          <div className="relative w-full max-w-md rounded-[2.5rem] bg-white/70 backdrop-blur-2xl p-8 md:p-10 shadow-[0_30px_60px_rgba(0,0,0,0.12)] border border-white/50">
+        {/* Auth Card */}
+        <div className="flex w-full items-center justify-center lg:w-[38%]">
+          <div className="w-full max-w-[400px] rounded-[28px] border border-[#dec8ab] bg-gradient-to-br from-[#f5ecde]/95 via-[#ead9c0]/92 to-[#d8b78f]/90 p-5 shadow-[0_16px_40px_rgba(90,60,20,0.12)] backdrop-blur-xl">
 
-            <div className="mb-6 md:mb-10 text-center">
-              <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-tight text-[#1f1f1f]">
-                {mode === 'login' ? 'Welcome Back' : 'Join ZeAlpha'}
-              </h2>
-              <div className={`mt-3 mx-auto w-12 h-1 ${btnGradient} rounded-full`}></div>
-              <p className="mt-4 text-sm md:text-base text-gray-500 font-medium">
-                {mode === 'login'
-                  ? 'Access your curated registry'
-                  : 'Start your journey with us'}
+            {/* Header */}
+            <div className="mb-5 text-center">
+              <h1 className="text-[30px] font-black tracking-tight text-[#2d2218]">
+                {getHeading()}
+              </h1>
+
+              <div className={`mx-auto mt-3 h-1 w-14 rounded-full ${goldGradient}`}></div>
+
+              <p className="mt-3 text-sm text-[#6f6257]">
+                {getSubtitle()}
               </p>
             </div>
 
-            <div className="mb-8 flex rounded-full bg-gray-100/50 p-1.5 border border-gray-200/50">
+            {/* Toggle */}
+            <div className="mb-5 flex rounded-full border border-[#dbc4a4] bg-white/40 p-1.5">
               <button
                 type="button"
-                onClick={() => setMode('login')}
-                className={`flex-1 rounded-full py-2.5 text-sm font-bold transition-all duration-500 ${
+                onClick={() => switchMode('login')}
+                className={`flex-1 rounded-full py-2.5 text-sm font-black transition-all duration-300 ${
                   mode === 'login'
-                    ? `${btnGradient} text-white shadow-lg scale-[1.02]`
-                    : 'text-gray-500 hover:text-[#9a793b]'
+                    ? `${goldGradient} text-white shadow-md`
+                    : 'text-[#6f6257] hover:text-[#8B5A00]'
                 }`}
               >
                 Login
@@ -112,107 +177,170 @@ const Auth = () => {
 
               <button
                 type="button"
-                onClick={() => setMode('signup')}
-                className={`flex-1 rounded-full py-2.5 text-sm font-bold transition-all duration-500 ${
+                onClick={() => switchMode('signup')}
+                className={`flex-1 rounded-full py-2.5 text-sm font-black transition-all duration-300 ${
                   mode === 'signup'
-                    ? `${btnGradient} text-white shadow-lg scale-[1.02]`
-                    : 'text-gray-500 hover:text-[#9a793b]'
+                    ? `${goldGradient} text-white shadow-md`
+                    : 'text-[#6f6257] hover:text-[#8B5A00]'
                 }`}
               >
                 Signup
               </button>
             </div>
 
+            {/* Error */}
             {error && (
-              <div className="mb-6 rounded-2xl bg-red-50 p-4 text-sm text-red-600 border border-red-100">
+              <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                 {error}
               </div>
             )}
 
+            {/* Success */}
             {success && (
-              <div className="mb-6 rounded-2xl bg-green-50 p-4 text-sm text-green-600 border border-green-100">
+              <div className="mb-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                 {success}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {mode === 'signup' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <input
-                    placeholder="First Name"
-                    value={form.firstName}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, firstName: e.target.value }))
-                    }
-                    className="w-full rounded-2xl border border-gray-100 bg-gray-50/50 px-5 py-3.5 outline-none focus:ring-2 focus:ring-[#d4af37]/30 focus:bg-white transition-all"
+            {/* Login - Role Selection */}
+            {mode === 'login' && loginStep === 'role' && (
+              <div className="mb-4">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#8c755e]">Continue as...</label>
+                <div className="flex gap-3">
+                  <RoleCard
+                    icon="💑"
+                    label="Couple"
+                    description="Plan your wedding registry"
+                    selected={loginRole === 'couple'}
+                    onSelect={() => handleLoginRoleSelect('couple')}
                   />
-                  <input
-                    placeholder="Last Name"
-                    value={form.lastName}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, lastName: e.target.value }))
-                    }
-                    className="w-full rounded-2xl border border-gray-100 bg-gray-50/50 px-5 py-3.5 outline-none focus:ring-2 focus:ring-[#d4af37]/30 focus:bg-white transition-all"
+                  <RoleCard
+                    icon="🎁"
+                    label="Guest"
+                    description="Find and contribute to weddings"
+                    selected={loginRole === 'guest'}
+                    onSelect={() => handleLoginRoleSelect('guest')}
                   />
                 </div>
-              )}
+              </div>
+            )}
 
-              <input
-                placeholder="Email Address"
-                type="email"
-                value={form.email}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, email: e.target.value }))
-                }
-                className="w-full rounded-2xl border border-gray-100 bg-gray-50/50 px-5 py-3.5 outline-none focus:ring-2 focus:ring-[#d4af37]/30 focus:bg-white transition-all"
-              />
+            {/* Login Form / Signup Form */}
+            {(mode === 'login' && loginStep === 'form') || mode === 'signup' ? (
+              <form onSubmit={handleSubmit} className="space-y-3.5">
+                {mode === 'signup' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="First Name"
+                      value={form.firstName}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, firstName: e.target.value }))
+                      }
+                      required
+                      className="rounded-2xl border border-[#e5d7c4] bg-white/55 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+                    />
 
-              <input
-                placeholder="Password"
-                type="password"
-                value={form.password}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, password: e.target.value }))
-                }
-                className="w-full rounded-2xl border border-gray-100 bg-gray-50/50 px-5 py-3.5 outline-none focus:ring-2 focus:ring-[#d4af37]/30 focus:bg-white transition-all"
-              />
+                    <input
+                      type="text"
+                      placeholder="Last Name"
+                      value={form.lastName}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, lastName: e.target.value }))
+                      }
+                      required
+                      className="rounded-2xl border border-[#e5d7c4] bg-white/55 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+                    />
+                  </div>
+                )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className={`group relative w-full overflow-hidden rounded-2xl ${btnGradient} py-4.5 font-bold text-white shadow-xl transition-all duration-300 hover:shadow-[#9a793b]/40 hover:scale-[1.02] active:scale-95 disabled:opacity-50 mt-2`}
-              >
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  {loading ? (
-                    <span className="flex gap-1">
-                      <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></span>
-                      <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce delay-100"></span>
-                      <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce delay-200"></span>
-                    </span>
-                  ) : (
-                    mode === 'login' ? 'Sign In to Account' : 'Create My Registry'
-                  )}
-                </span>
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-              </button>
-            </form>
+                {mode === 'signup' && (
+                  <div>
+                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#8c755e]">I am a...</label>
+                    <div className="flex gap-3">
+                      <RoleCard
+                        icon="💑"
+                        label="Couple"
+                        description="Plan your wedding registry"
+                        selected={role === 'couple'}
+                        onSelect={() => setRole('couple')}
+                      />
+                      <RoleCard
+                        icon="🎁"
+                        label="Guest"
+                        description="Find and contribute to weddings"
+                        selected={role === 'guest'}
+                        onSelect={() => setRole('guest')}
+                      />
+                    </div>
+                  </div>
+                )}
 
-            <div className="mt-8 text-center">
+                <input
+                  type="email"
+                  placeholder="Email Address"
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, email: e.target.value }))
+                  }
+                  required
+                  className="w-full rounded-2xl border border-[#e5d7c4] bg-white/55 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+                />
+
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={form.password}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, password: e.target.value }))
+                  }
+                  required
+                  minLength={6}
+                  className="w-full rounded-2xl border border-[#e5d7c4] bg-white/55 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+                />
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`mt-1 w-full rounded-2xl ${goldGradient} px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#8B5A00]/20 transition-all duration-300 hover:brightness-110 hover:shadow-xl disabled:opacity-60`}
+                >
+                  {loading
+                    ? 'Please wait...'
+                    : mode === 'login'
+                    ? 'Sign In'
+                    : 'Create Account'}
+                </button>
+
+                {mode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="mt-2 w-full text-center text-sm font-semibold text-[#8c755e] transition hover:text-[#5f3d00]"
+                  >
+                    &larr; Back to role selection
+                  </button>
+                )}
+              </form>
+            ) : null}
+
+            {/* Footer */}
+            <div className="mt-5 text-center">
               {mode === 'login' && (
-                <p className="text-sm text-gray-500 mb-2">
-                  <a href="/forgot-password" className="text-[#d4af37] hover:text-[#9a793b] font-medium">
-                    Forgot your password?
-                  </a>
-                </p>
+                <Link
+                  to="/forgot-password"
+                  className="text-sm font-semibold text-[#8B5A00] transition hover:text-[#5f3d00]"
+                >
+                  Forgot Password?
+                </Link>
               )}
-              <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-semibold">
+
+              <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-[#8c755e]">
                 ZeAlpha Studio &copy; 2026
               </p>
             </div>
 
           </div>
         </div>
-
       </div>
     </div>
   );

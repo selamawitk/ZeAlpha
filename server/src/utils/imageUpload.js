@@ -8,6 +8,9 @@ const __dirname = path.dirname(__filename);
 const uploadDir = path.join(__dirname, '../../uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
 
+const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 const storage = multer.diskStorage({
   destination: () => uploadDir,
   filename: (req, file, cb) => {
@@ -17,6 +20,18 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage });
+const fileFilter = (req, file, cb) => {
+  if (ALLOWED_MIMES.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only JPEG, PNG, GIF, and WebP images are allowed'), false);
+  }
+};
 
-export { upload };
+const upload = multer({
+  storage,
+  limits: { fileSize: MAX_FILE_SIZE },
+  fileFilter
+});
+
+export { upload, ALLOWED_MIMES, MAX_FILE_SIZE };

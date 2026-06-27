@@ -36,6 +36,6 @@ export const deleteNotification = async (req, res) => {
     return res.status(403).json({ message: 'Not authorized' });
   }
 
-  await notification.remove();
+  await Notification.deleteOne({ _id: notification._id });
   res.json({ message: 'Notification deleted' });
 };

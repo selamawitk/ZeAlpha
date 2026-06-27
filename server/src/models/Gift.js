@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const contributorSchema = new mongoose.Schema({
-  guestId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  guestId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   name: { type: String, required: true },
   phone: { type: String },
   amount: { type: Number, required: true },
@@ -29,7 +29,8 @@ const giftSchema = new mongoose.Schema({
   
   // Anti-Duplicate Lock (Feature #5)
   isLocked: { type: Boolean, default: false },
-  lockedUntil: { type: Date }, 
+  lockedUntil: { type: Date },
+  lockedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, 
 
   contributors: [contributorSchema], // Embedded for fast read in social feed
   
@@ -43,6 +44,13 @@ const giftSchema = new mongoose.Schema({
     enum: ['store', 'cashout'], 
     default: 'store' 
   },
+  fulfillmentPreference: {
+    type: String,
+    enum: ['vendor', 'cash'],
+    default: 'cash'
+  },
+  vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', default: null },
+  vendorProductId: { type: mongoose.Schema.Types.ObjectId, ref: 'VendorProduct', default: null },
   digitalCardUrl: { type: String }, // Generated on 100% completion
   digitalCardData: { type: String }, // JSON payload for the gift card
   
@@ -62,7 +70,7 @@ giftSchema.pre('save', function(next) {
 // Virtual field for Gift Surge (Feature 7)
 giftSchema.virtual('isSurging').get(function() {
   const progress = this.totalPrice > 0 ? (this.currentCollected / this.totalPrice) * 100 : 0;
-  return progress > 90 && this.status === 'open';
+  return progress > 80 && this.status === 'open';
 });
 
 giftSchema.virtual('isAlmostComplete').get(function() {

@@ -1,11 +1,29 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, BarChart3, ShieldCheck, Truck, Store, Users, LogOut, Menu, X } from 'lucide-react';
 import { getContributions } from '../api/api';
 import { useSocket } from '../context/SocketContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext.jsx';
+import ProfileDropdown from '../components/ProfileDropdown.jsx';
 
 const AdminLayout = () => {
+  const { user, logout } = useAuth();
   const [pendingCount, setPendingCount] = useState(0);
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem('adminSidebarCollapsed') === 'true';
+  });
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { socket } = useSocket();
+
+  const goldGradient = "bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]";
+  const textGoldGradient = "bg-gradient-to-r from-[#8B5A00] to-[#B8860B] bg-clip-text text-transparent";
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem('adminSidebarCollapsed', next);
+  };
 
   const updateBadgeCount = async () => {
     try {
@@ -19,88 +37,162 @@ const AdminLayout = () => {
 
   useEffect(() => {
     updateBadgeCount();
-
     if (socket) {
       socket.on('newContribution', updateBadgeCount);
-      return () => socket.off('newContribution');
+      return () => socket.off('newContribution', updateBadgeCount);
     }
   }, [socket]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-900 font-sans">
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[280px_1fr]">
-        {/* Sidebar Navigation */}
-        <aside className="border-r border-slate-200 bg-gradient-to-b from-white to-slate-50 px-6 py-8 shadow-lg">
-          <div className="mb-10">
-            <p className="text-[10px] uppercase tracking-[0.4em] text-amber-500/80 font-bold animate-pulse">System Authority</p>
-            <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">ZeAlpha <span className="text-amber-500">Admin</span></h1>
-            <div className="mt-2 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <p className="text-xs text-slate-500">Live Control Center</p>
+  const navIcon = (icon) => <span className="shrink-0">{icon}</span>;
+
+  const navItems = [
+    { to: "/admin", label: "Global Metrics", icon: <BarChart3 size={18} /> },
+    { to: "/admin/verify-payments", label: "Payment Verification", icon: <ShieldCheck size={18} />, badge: pendingCount },
+    { to: "/admin/orders", label: "Vendor Fulfillment", icon: <Truck size={18} /> },
+    { to: "/admin/vendors", label: "Vendors", icon: <Store size={18} /> },
+    { to: "/admin/users", label: "Users", icon: <Users size={18} /> }
+  ];
+
+  const sidebarContent = (
+    <>
+      <div className={`px-6 py-8 ${collapsed ? 'px-4' : ''}`}>
+        <div className="flex items-center justify-between">
+          {!collapsed && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <p className="text-[10px] uppercase tracking-[0.4em] text-[#8B5A00] font-bold">System Authority</p>
+              <h1 className={`mt-3 text-2xl font-black tracking-tight ${textGoldGradient}`}>
+                ZeAlpha Admin
+              </h1>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-700 animate-pulse"></span>
+                <p className="text-xs text-[#705008]">Live Control Center</p>
+              </div>
+            </motion.div>
+          )}
+          {collapsed && (
+            <div className="mx-auto">
+              <div className={`mt-3 text-2xl font-black ${textGoldGradient}`}>ZA</div>
             </div>
-          </div>
+          )}
 
-          <nav className="space-y-2 text-sm">
-            <NavLink 
-              to="/admin" 
-              end 
-              className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold shadow-lg scale-105' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 hover:scale-102'}`}
-            >
-              Global Metrics
-            </NavLink>
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleCollapsed(); }}
+            className={`p-2 rounded-xl hover:bg-[#D4C39B]/40 transition hidden lg:block ${collapsed ? 'mx-auto' : ''}`}
+          >
+            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
+        </div>
+      </div>
 
-            <NavLink 
-              to="/admin/verify-payments" 
-              className={({ isActive }) => `flex items-center justify-between rounded-2xl px-4 py-3.5 transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold shadow-lg scale-105' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 hover:scale-102'}`}
+      <nav className="space-y-2 px-3 text-sm">
+        {navItems.map((item, index) => (
+          <motion.div
+            key={item.to}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
+          >
+            <NavLink
+              to={item.to}
+              end={item.to === "/admin"}
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) => `flex items-center justify-between rounded-2xl px-4 py-3.5 transition-all duration-300 font-bold
+                ${isActive 
+                  ? `${goldGradient} text-white shadow-md shadow-[#8B5A00]/30` 
+                  : 'text-[#4A3D25] hover:bg-[#D4C39B]/40 hover:text-[#1A150C]'}`}
+              title={collapsed ? item.label : undefined}
             >
-              <span>Payment Verification</span>
-              {pendingCount > 0 && (
-                <span className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-black ${isActive ? 'bg-white text-amber-600' : 'bg-amber-500 text-white'}`}>
-                  {pendingCount}
+              <span className={'flex items-center gap-3 ' + (collapsed ? 'mx-auto' : '')}>
+                {item.icon}
+                {collapsed ? '' : item.label}
+              </span>
+              {!collapsed && item.badge > 0 && (
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#8B5A00] px-1.5 text-[10px] font-black text-white">
+                  {item.badge}
                 </span>
               )}
             </NavLink>
+          </motion.div>
+        ))}
+      </nav>
 
-            <NavLink 
-              to="/admin/orders" 
-              className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold shadow-lg scale-105' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 hover:scale-102'}`}
+      <div className="absolute bottom-6 w-full px-3">
+        <button
+          onClick={logout}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4C39B] bg-white/30 px-3 py-2.5 text-sm font-bold text-[#4A3D25] transition hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+        >
+          <LogOut size={16} className="shrink-0" />
+          {!collapsed && <span>Logout</span>}
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#f5f1ea] via-[#f8f5ef] to-[#ece2d4] text-[#2a1f14] font-sans">
+      {/* Desktop sidebar */}
+      <aside className={`fixed left-0 top-0 h-full border-r border-[#D4C39B] bg-gradient-to-b from-[#F2EDE1] to-[#E8E0CE] shadow-xl z-50 transition-all duration-300 hidden lg:block ${collapsed ? 'w-20' : 'w-64'}`}>
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile sidebar */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'tween', duration: 0.3 }}
+              className="fixed left-0 top-0 h-full w-[280px] border-r border-[#D4C39B] bg-gradient-to-b from-[#F2EDE1] to-[#E8E0CE] shadow-xl z-50 lg:hidden overflow-y-auto"
             >
-              Vendor Fulfillment
-            </NavLink>
-          </nav>
+              {sidebarContent}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
-          <div className="mt-auto pt-10">
-            <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
-              <p className="text-[10px] uppercase text-gray-500">Terminal ID</p>
-              <p className="text-xs font-mono text-gray-300 uppercase tracking-tighter">ZA-ROOT-99X-ETH</p>
+      <div className={`flex min-h-screen flex-col transition-all duration-300 ${collapsed ? 'lg:ml-20' : 'lg:ml-64'} ml-0`}>
+        <header className="sticky top-0 z-30 border-b border-[#D4C39B] bg-[#F7F3EA]/90 px-4 lg:px-6 py-4 backdrop-blur-md shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setMobileOpen(true)}
+                className="p-2 rounded-xl hover:bg-[#D4C39B]/40 transition lg:hidden"
+              >
+                <Menu size={20} />
+              </button>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-[#8B5A00] font-bold">Admin Console</p>
+                <h2 className="text-xl font-black tracking-tight text-[#2d2218]">
+                  {collapsed ? 'ZA' : 'System Administration'}
+                </h2>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <ProfileDropdown dashboardType="admin" />
+              <span className="flex h-2 w-2 rounded-full bg-emerald-700 animate-pulse"></span>
             </div>
           </div>
-        </aside>
-
-        {/* Main Content Area */}
-        <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-white">
-          <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 px-8 py-6 backdrop-blur-md shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold">Session Active</p>
-                <h2 className="text-xl font-medium text-slate-900 bg-gradient-to-r from-slate-700 to-slate-600 bg-clip-text text-transparent">Admin Dashboard</h2>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="hidden md:block text-right">
-                  <p className="text-[10px] text-slate-500 uppercase">Server Status</p>
-                  <p className="text-xs text-emerald-600 font-mono animate-pulse">STABLE_PRODUCTION</p>
-                </div>
-                <div className="h-10 w-10 rounded-full border border-slate-300 bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-amber-600 font-bold shadow-sm">
-                  A
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1 px-8 py-8">
+        </header>
+        <main className="flex-1 px-4 py-6 overflow-x-auto">
+          <div className="min-w-0 w-full">
             <Outlet />
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

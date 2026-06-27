@@ -100,3 +100,23 @@ export const sendPasswordResetEmail = async (userEmail, resetToken) => {
 
   return transporter.sendMail(mailOptions);
 };
+
+export const sendSupportEmail = async ({ name, email, subject, message }) => {
+  const mailOptions = {
+    from: `"ZeAlpha Support" <${process.env.EMAIL_USER}>`,
+    to: process.env.EMAIL_USER,
+    replyTo: email,
+    subject: `[Support] ${subject}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #f59e0b;">New Support Request</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Subject:</strong> ${subject}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+      </div>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};

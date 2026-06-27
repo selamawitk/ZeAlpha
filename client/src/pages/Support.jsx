@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../api/api.js';
 
 const Support = () => {
   const [formData, setFormData] = useState({
@@ -9,6 +10,8 @@ const Support = () => {
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -17,11 +20,18 @@ const Support = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // In a real app, this would send the form data to your backend
-    console.log('Support form submitted:', formData);
-    setSubmitted(true);
+    setLoading(true);
+    setError('');
+    try {
+      await api.post('/support', formData);
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -96,11 +106,15 @@ const Support = () => {
                   />
                 </div>
 
+                {error && (
+                  <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700">{error}</div>
+                )}
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark"
+                  disabled={loading}
+                  className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark disabled:bg-gray-300"
                 >
-                  Send Message
+                  {loading ? 'Sending...' : 'Send Message'}
                 </button>
               </form>
             )}
@@ -120,7 +134,7 @@ const Support = () => {
               <div>
                 <h3 className="font-semibold text-primary-dark mb-2">What payment methods do you accept?</h3>
                 <p className="text-secondary text-sm">
-                  We accept Stripe payments, TeleBirr, and bank transfers for manual verification.
+                  We accept Stripe payments and bank transfers for manual verification.
                 </p>
               </div>
 

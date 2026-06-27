@@ -2,9 +2,9 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const ProtectedRoute = ({ role, children }) => {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen grid place-items-center bg-ivory text-primary-dark">
         <div className="rounded-3xl bg-white p-8 shadow-premium">Checking access...</div>
@@ -16,7 +16,9 @@ const ProtectedRoute = ({ role, children }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (user.role !== role) {
+  const roles = Array.isArray(role) ? role : [role];
+
+  if (!roles.includes(user.role)) {
     if (user.role === 'admin') {
       return <Navigate to="/admin" replace />;
     }

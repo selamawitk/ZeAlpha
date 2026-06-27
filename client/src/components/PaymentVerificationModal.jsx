@@ -76,7 +76,7 @@ const PaymentVerificationModal = ({ contribution, onClose, onApprove }) => {
               onClick={onClose}
               className="flex-1 rounded-2xl bg-gray-100 py-4 text-sm font-bold text-gray-600 hover:bg-gray-200 transition"
             >
-              Cancel
+              Reject
             </button>
           </div>
         </div>

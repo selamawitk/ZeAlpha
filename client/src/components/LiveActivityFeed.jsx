@@ -1,9 +1,24 @@
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSocket } from '../context/SocketContext.jsx';
+import api from '../api/api.js';
 
-const LiveActivityFeed = () => {
+const LiveActivityFeed = ({ weddingId }) => {
   const { socket, isConnected } = useSocket();
   const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    if (!weddingId) return;
+    api.get(`/activities?weddingId=${weddingId}&limit=10`)
+      .then(({ data }) => {
+        const loaded = data.map((a) => ({
+          message: a.message,
+          time: new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }));
+        setEvents(loaded);
+      })
+      .catch(() => {});
+  }, [weddingId]);
 
   useEffect(() => {
     if (!socket) return;
@@ -43,12 +58,21 @@ const LiveActivityFeed = () => {
         {events.length === 0 ? (
           <p className="text-sm text-secondary">No activity yet. Guest contributions will appear here live.</p>
         ) : (
-          events.map((event, index) => (
-            <div key={`${event.message}-${index}`} className="rounded-3xl bg-primary/5 p-4">
-              <p className="text-sm text-primary-dark">{event.message}</p>
-              <p className="mt-2 text-xs text-secondary">{event.time}</p>
-            </div>
-          ))
+          <AnimatePresence>
+            {events.map((event, index) => (
+              <motion.div
+                key={`${event.message}-${index}`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+                className="rounded-3xl bg-primary/5 p-4"
+              >
+                <p className="text-sm text-primary-dark">{event.message}</p>
+                <p className="mt-2 text-xs text-secondary">{event.time}</p>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         )}
       </div>
     </div>

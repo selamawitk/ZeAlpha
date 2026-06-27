@@ -33,7 +33,7 @@ Everything updates instantly without a page refresh. A live feed shows real-time
 What happens if a gift is only 70% funded when the wedding date passes? The couple has complete flexibility: they can choose to extend the deadline, swap the accumulated balance to fund a different item, or safely cash out the partial funds.
 
 6.  FinTech Layer & Smart Payouts
-Securely processes tracking states via Stripe, alongside simulated setups ready for local networks like Telebirr and bank transfers. Once the event wraps up, the couple can choose to have the platform buy and deliver the physical items via partner vendors, or withdraw the money directly to their accounts.
+Securely processes payments via Stripe, with bank transfer support for manual verification. Once the event wraps up, the couple can choose to have the platform buy and deliver the physical items via partner vendors, or withdraw the money directly to their bank accounts.
 
  Tech Stack
 Frontend: React.js + Tailwind CSS

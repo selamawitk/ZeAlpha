@@ -1,135 +1,224 @@
+import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const PublicLayout = () => {
-  const btnGradient = "bg-gradient-to-r from-[#d4af37] via-[#9a793b] to-[#815e08]";
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const goldGradient =
+    'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fdfcfb] text-[#1a1a1a] selection:bg-rose-100 selection:text-rose-900">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-rose-100/30 blur-[120px] animate-pulse"></div>
-        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] rounded-full bg-amber-50/40 blur-[100px]"></div>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#f8f3eb] via-[#fcfaf7] to-[#ede1cf] text-[#2d2218] selection:bg-[#d4af37]/20 selection:text-[#5c3b00]">
+      
+      {/* Background Glow */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[#d4af37]/10 blur-3xl"></div>
+
+        <div className="absolute top-20 right-0 h-72 w-72 rounded-full bg-[#c49b52]/10 blur-3xl"></div>
       </div>
 
-      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-rose-50/50">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-[#eadcc9] bg-white/70 backdrop-blur-xl">
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
-          <Link 
-            to="/" 
-            className="group relative flex items-center gap-2 text-2xl font-serif font-bold tracking-tight text-[#d4af37]"
+          
+          {/* Logo */}
+          <Link
+            to="/"
+            className="group relative flex items-center gap-2 text-2xl font-black tracking-tight"
           >
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#e1ba38] to-[#815e08]">
+            <span className="bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00] bg-clip-text text-transparent">
               ZeAlpha
             </span>
-            <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#d4af37] transition-all duration-300 group-hover:w-full"></div>
+
+            <div className="absolute -bottom-1 left-0 h-0.5 w-0 bg-[#B8860B] transition-all duration-300 group-hover:w-full"></div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-3">
+          {/* Desktop Nav */}
+          <nav className="hidden items-center gap-3 md:flex">
             {[
-              { to: "/", label: "Home" },
-              { to: "/auth", label: "Couple Login" },
-              { to: "/my-gifts", label: "My Gifts" }
+              { to: '/', label: 'Home' },
+              { to: '/auth', label: 'Login' },
+              { to: '/my-gifts', label: 'My Gifts' },
             ].map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}
-                end={link.to === "/"}
-                className={({ isActive }) => `
-                  px-6 py-2 text-sm font-bold rounded-full transition-all duration-500
-                  ${isActive 
-                    ? `${btnGradient} text-white shadow-lg shadow-[#9a793b]/30 scale-105` 
-                    : 'text-gray-600 hover:bg-rose-50 hover:text-[#9a793b] hover:scale-110'}
-                `}
+                end={link.to === '/'}
+                className={({ isActive }) =>
+                  `rounded-full px-6 py-2.5 text-sm font-black transition-all duration-300 ${
+                    isActive
+                      ? `${goldGradient} text-white shadow-lg shadow-[#8B5A00]/20`
+                      : 'text-[#6f6257] hover:bg-[#f3e7d4] hover:text-[#8B5A00]'
+                  }`
+                }
               >
                 {link.label}
               </NavLink>
             ))}
           </nav>
 
-          <button className="md:hidden p-2 text-gray-600 hover:scale-110 transition-transform duration-300">
-            <div className="w-6 h-0.5 bg-current mb-1"></div>
-            <div className="w-6 h-0.5 bg-current mb-1"></div>
-            <div className="w-4 h-0.5 bg-current"></div>
+          {/* Mobile Menu */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 text-[#6f6257] transition hover:scale-110 md:hidden"
+          >
+            <div className={`mb-1 h-0.5 w-6 bg-current transition ${mobileOpen ? 'rotate-45 translate-y-1.5' : ''}`}></div>
+            <div className={`mb-1 h-0.5 w-6 bg-current transition ${mobileOpen ? 'opacity-0' : ''}`}></div>
+            <div className={`h-0.5 bg-current transition ${mobileOpen ? 'w-6 -rotate-45 -translate-y-1.5' : 'w-4'}`}></div>
           </button>
         </div>
+
+        {/* Mobile Nav */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.nav
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden border-t border-[#eadcc9] bg-white/90 backdrop-blur-xl md:hidden"
+            >
+              <div className="flex flex-col gap-2 px-6 py-4">
+                {[
+                  { to: '/', label: 'Home' },
+                  { to: '/auth', label: 'Login' },
+                  { to: '/my-gifts', label: 'My Gifts' },
+                ].map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    end={link.to === '/'}
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      `rounded-full px-4 py-2.5 text-sm font-black transition ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00] text-white'
+                          : 'text-[#6f6257] hover:bg-[#f3e7d4]'
+                      }`
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+              </div>
+            </motion.nav>
+          )}
+        </AnimatePresence>
       </header>
 
-      <main className="relative flex-1 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <Outlet />
+      {/* Main */}
+      <main className="relative flex-1">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        >
+          <Outlet />
+        </motion.div>
       </main>
 
-      <footer className="relative bg-[#1a1a1a] text-[#fdfcfb] pt-20 pb-10 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-[#d4af37]/30 to-transparent"></div>
+      {/* Footer */}
+      <footer className="relative overflow-hidden border-t border-[#d4c0a5] bg-gradient-to-br from-[#f5ede0] via-[#efe4d2] to-[#e2ceb2] pt-16 pb-8">
         
-        <div className="container mx-auto px-6">
+        {/* Glow */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-20 left-10 h-56 w-56 rounded-full bg-[#B8860B]/8 blur-3xl"></div>
+
+          <div className="absolute bottom-0 right-0 h-56 w-56 rounded-full bg-[#8B5A00]/10 blur-3xl"></div>
+        </div>
+
+        <div className="container relative z-10 mx-auto px-6">
+          
           <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-6">
-              <h3 className="text-2xl font-serif font-bold text-[#d4af37]">ZeAlpha</h3>
-              <p className="text-sm text-gray-400 leading-relaxed max-w-xs">
-                Redefining the art of giving. Join us in creating shared memories and magical wedding experiences through collaborative gifting.
+            
+            {/* Brand */}
+            <div className="space-y-5">
+              <h3 className="text-2xl font-black bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00] bg-clip-text text-transparent">
+                ZeAlpha
+              </h3>
+
+              <p className="max-w-xs text-sm leading-7 text-[#5c4d3e]">
+                Elegant wedding registry experiences crafted for modern couples,
+                seamless gifting, and memorable celebrations.
               </p>
             </div>
 
-            <div className="space-y-6">
-              <h4 className="text-sm font-bold uppercase tracking-widest text-[#d4af37]">Explore</h4>
+            {/* Explore */}
+            <div className="space-y-5">
+              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-[#8B5A00]">
+                Explore
+              </h4>
+
               <div className="flex flex-col gap-3">
-                {['Home', 'Start Registry', 'Find Wedding'].map((item) => (
-                  <Link 
-                    key={item} 
-                    to="/" 
-                    className="text-sm text-gray-400 hover:text-[#f9e79f] hover:translate-x-2 transition-all duration-300"
-                  >
-                    {item}
-                  </Link>
+                {[
+                  { label: 'Home', to: '/' },
+                  { label: 'Start Registry', to: '/auth' },
+                  { label: 'Find Wedding', to: '/my-gifts' },
+                ].map((item) => (
+                    <Link
+                      key={item.label}
+                      to={item.to}
+                      className="text-sm font-medium text-[#5c4d3e] transition-all duration-300 hover:translate-x-1 hover:text-[#8B5A00]"
+                    >
+                      {item.label}
+                    </Link>
                 ))}
               </div>
             </div>
 
-            <div className="space-y-6">
-              <h4 className="text-sm font-bold uppercase tracking-widest text-[#d4af37]">Legal</h4>
-              <div className="flex flex-col gap-3">
-                <Link 
-                  to="/privacy-policy" 
-                  className="text-sm text-gray-400 hover:text-[#f9e79f] hover:translate-x-2 transition-all duration-300"
-                >
-                  Privacy Policy
-                </Link>
-                <Link 
-                  to="/terms-of-service" 
-                  className="text-sm text-gray-400 hover:text-[#f9e79f] hover:translate-x-2 transition-all duration-300"
-                >
-                  Terms of Service
-                </Link>
-                <Link 
-                  to="/support" 
-                  className="text-sm text-gray-400 hover:text-[#f9e79f] hover:translate-x-2 transition-all duration-300"
-                >
-                  Support
-                </Link>
-              </div>
-            </div>
+            {/* Legal */}
+            <div className="space-y-5">
+              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-[#8B5A00]">
+                Legal
+              </h4>
 
-            <div className="space-y-6">
-              <h4 className="text-sm font-bold uppercase tracking-widest text-[#d4af37]">Social</h4>
-              <div className="flex gap-4">
-                {['F', 'I', 'X'].map((social) => (
-                  <button 
-                    key={social}
-                    className={`h-10 w-10 rounded-full flex items-center justify-center text-sm transition-all duration-300 hover:scale-125 hover:shadow-lg shadow-[#9a793b]/20 border border-gray-700 hover:border-transparent hover:text-white hover:${btnGradient}`}
-                  >
-                    {social}
-                  </button>
+              <div className="flex flex-col gap-3">
+                {[
+                  'Privacy Policy',
+                  'Terms of Service',
+                  'Support',
+                ].map((item) => (
+                    <Link
+                      key={item}
+                      to={`/${item.toLowerCase().replace(/\s+/g, '-')}`}
+                      className="text-sm font-medium text-[#5c4d3e] transition-all duration-300 hover:translate-x-1 hover:text-[#8B5A00]"
+                    >
+                      {item}
+                    </Link>
                 ))}
               </div>
             </div>
+
+            {/* Social */}
+<div className="space-y-5">
+  <h4 className="text-xs font-black uppercase tracking-[0.2em] text-[#8B5A00]">
+    Social
+  </h4>
+
+  <div className="flex gap-4">
+    {[
+      { label: 'F', href: 'https://facebook.com' },
+      { label: 'I', href: 'https://instagram.com' },
+      { label: 'X', href: 'https://twitter.com' },
+    ].map((social) => (
+      <a
+        key={social.label}
+        href={social.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex h-11 w-11 items-center justify-center rounded-full border border-[#cfa97a] bg-gradient-to-br from-[#fff8ef] via-[#f3e2c8] to-[#dfbf95] text-sm font-black text-[#5C3B00] shadow-md transition-all duration-300 hover:scale-110 hover:-translate-y-1 hover:from-[#B8860B] hover:via-[#A0700A] hover:to-[#8B5A00] hover:text-white hover:shadow-lg hover:shadow-[#8B5A00]/25 hover:border-transparent"
+      >
+        {social.label}
+      </a>
+    ))}
+  </div>
+</div>
           </div>
 
-          <div className="mt-20 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500 font-medium">
-               ZeAlpha © {new Date().getFullYear()} — All rights reserved.
+          {/* Bottom */}
+          <div className="mt-14 border-t border-[#d4c0a5]/50 pt-6 text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#6f6257]">
+              ZeAlpha © {new Date().getFullYear()} — All rights reserved.
             </p>
-            <div className="flex gap-6">
-              <div className="w-12 h-px bg-gray-800"></div>
-              <div className="w-12 h-px bg-gray-800"></div>
-            </div>
           </div>
         </div>
       </footer>

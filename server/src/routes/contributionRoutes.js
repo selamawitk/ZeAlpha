@@ -1,9 +1,11 @@
 import express from 'express';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, optionalProtect } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
-import { createContribution, getContributions, getContributionById, refundContribution, updateContributionStatus } from '../controllers/contributionController.js';
+import { createContribution, getContributions, getContributionById, refundContribution, updateContributionStatus, downloadReceipt, getMyContributions } from '../controllers/contributionController.js';
 
 const router = express.Router();
-router.route('/').post(protect, createContribution).get(protect, authorizeRoles('admin'), getContributions);
+router.route('/').post(optionalProtect, createContribution).get(protect, getContributions);
+router.get('/my', protect, getMyContributions);
+router.get('/:id/receipt', protect, downloadReceipt);
 router.route('/:id').get(protect, getContributionById).put(protect, authorizeRoles('admin'), updateContributionStatus).delete(protect, authorizeRoles('admin'), refundContribution);
 export default router;

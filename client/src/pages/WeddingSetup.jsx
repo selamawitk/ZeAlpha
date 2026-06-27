@@ -43,7 +43,7 @@ const WeddingSetup = () => {
     setError('');
 
     try {
-      const bannerImageUrl = imageOptions.find((option) => option.value === form.bannerImage)?.src || imageOptions[0].src;
+      const bannerImageUrl = imageOptions.find((option) => option.value === form.bannerImage)?.src || bannerA;
 
       const weddingData = {
         weddingName: form.weddingName,
