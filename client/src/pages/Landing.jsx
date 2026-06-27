@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchPlatformStats } from '../api/api.js';
-import { Heart, Users, Gift, Globe, MessageCircle, ExternalLink, Mail, ChevronRight } from 'lucide-react';
+import { Heart, Users, Gift } from 'lucide-react';
 import weddingImg from '../assets/images/wedding.png';
 
 const Landing = () => {
@@ -203,66 +203,6 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="bg-gradient-to-br from-[#2d2218] to-[#1a1410] text-white/70">
-        <div className="container mx-auto px-6 py-14">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-
-            {/* Brand */}
-            <div className="sm:col-span-2 lg:col-span-1">
-              <h3 className={`text-lg font-black bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00] bg-clip-text text-transparent`}>
-                ZeAlpha
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-white/50 max-w-xs">
-                A modern collaborative registry platform for couples and their communities.
-              </p>
-              <div className="mt-5 flex gap-3">
-                <a href="#" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/60 transition hover:bg-[#B8860B] hover:text-white"><Globe size={16} /></a>
-                <a href="#" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/60 transition hover:bg-[#B8860B] hover:text-white"><MessageCircle size={16} /></a>
-                <a href="#" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/60 transition hover:bg-[#B8860B] hover:text-white"><ExternalLink size={16} /></a>
-                <a href="mailto:hello@zealpha.com" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/60 transition hover:bg-[#B8860B] hover:text-white"><Mail size={16} /></a>
-              </div>
-            </div>
-
-            {/* Platform */}
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Platform</h4>
-              <ul className="mt-4 space-y-3">
-                <li><Link to="/auth" className="text-sm text-white/60 transition hover:text-[#B8860B]">Create Registry</Link></li>
-                <li><Link to="/my-gifts" className="text-sm text-white/60 transition hover:text-[#B8860B]">Find a Wedding</Link></li>
-                <li><Link to="/support" className="text-sm text-white/60 transition hover:text-[#B8860B]">Support</Link></li>
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Legal</h4>
-              <ul className="mt-4 space-y-3">
-                <li><Link to="/privacy-policy" className="text-sm text-white/60 transition hover:text-[#B8860B]">Privacy Policy</Link></li>
-                <li><Link to="/terms-of-service" className="text-sm text-white/60 transition hover:text-[#B8860B]">Terms of Service</Link></li>
-              </ul>
-            </div>
-
-            {/* Newsletter */}
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Stay Updated</h4>
-              <div className="mt-4 flex items-center rounded-full border border-white/20 bg-white/5 overflow-hidden">
-                <input type="email" placeholder="Your email" className="flex-1 bg-transparent px-4 py-2.5 text-sm text-white outline-none placeholder:text-white/30" />
-                <button className={`px-4 py-2.5 ${goldGradient} text-white transition hover:brightness-110`}>
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-          <div className="mt-12 border-t border-white/10 pt-6 text-center">
-            <p className="text-xs text-white/40">
-              &copy; {new Date().getFullYear()} ZeAlpha. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
