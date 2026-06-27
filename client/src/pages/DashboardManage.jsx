@@ -59,8 +59,9 @@ const DashboardManage = () => {
     }
   };
 
-  const weddingId =
-    user?.managedWedding || localStorage.getItem('weddingId');
+  const [weddingId, setWeddingId] = useState(
+    user?.managedWedding || localStorage.getItem('weddingId') || ''
+  );
 
   const goldGradient =
     'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
@@ -237,6 +238,21 @@ const DashboardManage = () => {
               onSubmit={handleSubmit}
               className="space-y-5"
             >
+
+              {/* Wedding ID */}
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-[#6f6257]">
+                  Wedding ID
+                </label>
+                <input
+                  name="weddingId"
+                  value={weddingId}
+                  onChange={(e) => setWeddingId(e.target.value)}
+                  placeholder="Wedding ID (from your dashboard)"
+                  required
+                  className="w-full rounded-2xl border border-[#e5d7c4] bg-white/65 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+                />
+              </div>
 
               {/* Gift Name */}
               <div>

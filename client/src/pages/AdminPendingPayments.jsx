@@ -5,6 +5,7 @@ import {
 } from '../api/api.js';
 import { motion } from 'framer-motion';
 
+import { CheckCircle } from 'lucide-react';
 import { useSocket } from '../context/SocketContext.jsx';
 import PaymentVerificationModal from '../components/PaymentVerificationModal';
 
@@ -162,7 +163,7 @@ const AdminPendingPayments = () => {
             <div
               className={`mb-4 flex h-16 w-16 items-center justify-center rounded-full ${goldGradient} text-2xl text-white shadow-lg`}
             >
-              ✔
+              <CheckCircle className="h-6 w-6" />
             </div>
 
             <p

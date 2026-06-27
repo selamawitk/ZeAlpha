@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Gift, Heart, Users, CheckCircle, Calendar, Share2, Download, PartyPopper, Sparkles } from 'lucide-react';
+import { Gift, Heart, Users, CheckCircle, Calendar, Share2, Download, PartyPopper, Sparkles, Search, User } from 'lucide-react';
 import api from '../api/api.js';
 
 const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
@@ -57,7 +57,7 @@ const DigitalGiftCard = () => {
     return (
       <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-[#faf6f0] via-[#f8f3eb] to-[#efe2d1] px-4">
         <div className="w-full max-w-md rounded-[28px] border border-[#dec8ab] bg-gradient-to-br from-[#f5ecde]/95 via-[#ead9c0]/92 to-[#d8b78f]/90 p-8 text-center shadow-[0_16px_40px_rgba(90,60,20,0.12)] backdrop-blur-xl">
-          <p className="text-4xl mb-4">🔍</p>
+          <Search className="mx-auto h-12 w-12 text-[#6f6257] mb-4" />
           <h1 className="text-2xl font-black text-[#2d2218]">Gift Not Found</h1>
           <p className="mt-3 text-sm text-[#6f6257]">This digital gift card could not be found.</p>
           <Link to="/" className={`mt-6 inline-flex rounded-2xl ${goldGradient} px-6 py-3 text-sm font-bold text-white shadow-lg`}>
@@ -96,8 +96,8 @@ const DigitalGiftCard = () => {
               </button>
             </div>
 
-            {gift.image && (
-              <img src={gift.image} alt={gift.name} className="w-full h-56 object-cover rounded-2xl mb-6" />
+            {gift.imageUrl && (
+              <img src={gift.imageUrl} alt={gift.name} className="w-full h-56 object-cover rounded-2xl mb-6" />
             )}
 
             <h1 className="text-3xl font-black tracking-tight text-[#2d2218]">{gift.name}</h1>
@@ -159,7 +159,7 @@ const DigitalGiftCard = () => {
                   {contributions.map((c, i) => (
                     <div key={c._id || i} className="flex items-center gap-3 rounded-xl border border-[#ead9c0] bg-white/50 p-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#B8860B]/15 text-xs font-bold text-[#8B5A00]">
-                        {c.isAnonymous ? '👤' : (c.guestId?.name || c.guestName || 'G')[0]}
+                        {c.isAnonymous ? <User className="h-4 w-4 text-[#8B5A00]" /> : (c.guestId?.name || c.guestName || 'G')[0]}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-[#2d2218] truncate">

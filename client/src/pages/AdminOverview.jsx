@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import AnalyticsCard from '../components/AnalyticsCard.jsx';
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Package, Shield, CheckCircle } from 'lucide-react';
 
 import {
   fetchPendingContributions,
@@ -282,7 +283,7 @@ const AdminOverview = () => {
         {/* Vendor Analytics */}
         <section className={`rounded-[28px] ${glassCard} p-5`}>
           <div className="flex items-center gap-4 mb-5">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${goldGradient} text-white shadow-md`}>📦</div>
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${goldGradient} text-white shadow-md`}><Package className="h-6 w-6" /></div>
             <div>
               <h2 className={`text-xl font-black ${textPrimary}`}>Fulfillment Analytics</h2>
               <p className={`text-sm ${textMuted}`}>Real-time vendor order metrics</p>
@@ -328,7 +329,7 @@ const AdminOverview = () => {
               <div
                 className={`flex h-12 w-12 items-center justify-center rounded-2xl ${goldGradient} text-white shadow-md`}
               >
-                🔐
+                <Shield className="h-6 w-6" />
               </div>
 
               <div>
@@ -380,7 +381,7 @@ const AdminOverview = () => {
               <div
                 className={`flex h-12 w-12 items-center justify-center rounded-2xl ${goldGradient} text-white shadow-md`}
               >
-                ✔
+                <CheckCircle className="h-6 w-6" />
               </div>
 
               <div>

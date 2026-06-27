@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Calendar, AlertTriangle } from 'lucide-react';
+import { Calendar, AlertTriangle, PartyPopper } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import api, { updateGiftSettlement } from '../api/api.js';
 
@@ -151,9 +151,9 @@ const Dashboard = () => {
                 {isPast ? (
                   <span>Your wedding date has passed! <Link to="/dashboard/manage" className="underline font-bold">Review your gifts</Link> to settle them.</span>
                 ) : diffDays === 0 ? (
-                  <span>Today is your wedding day! 🎉 Congratulations!</span>
+                  <span><PartyPopper className="inline h-4 w-4 mr-1" />Today is your wedding day! Congratulations!</span>
                 ) : diffDays === 1 ? (
-                  <span>Your wedding is tomorrow! 🎉 Make sure your registry is ready.</span>
+                  <span><PartyPopper className="inline h-4 w-4 mr-1" />Your wedding is tomorrow! Make sure your registry is ready.</span>
                 ) : (
                   <span>Only <strong>{diffDays} days</strong> until your wedding! Share your registry with guests.</span>
                 )}

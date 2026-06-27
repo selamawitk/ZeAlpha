@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { X } from 'lucide-react';
 import { contributeToGift, uploadImage } from '../api/api.js';
 import api from '../api/api.js';
 
@@ -91,7 +92,7 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
             <p className="mt-2 text-sm text-[#6f6257]">Support the couple with a contribution.</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-white/60 transition text-[#6f6257] hover:text-[#2d2218]">
-            ✕
+            <X className="h-5 w-5" />
           </button>
         </div>
 

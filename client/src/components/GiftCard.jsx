@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Lock, Gift, Clock } from 'lucide-react';
+import { Lock, Gift, Clock, Flame } from 'lucide-react';
 import api from '../api/api.js';
 
 const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
@@ -64,7 +64,7 @@ const GiftCard = ({ gift, onContribute = () => {} }) => {
             )}
             {isSurging && !isLocked && (
               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${goldGradient} text-white animate-pulse`}>
-                🔥 Surging!
+                <Flame className="h-3 w-3" /> Surging!
               </span>
             )}
           </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Heart, Gift } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import authImage from '../assets/images/auth wedding page.png';
 
@@ -15,7 +16,7 @@ const RoleCard = ({ label, description, selected, onSelect, icon }) => (
         : 'border-[#e5d7c4] bg-white/40 hover:border-[#d4a843]/50'
     }`}
   >
-    <span className="text-2xl">{icon}</span>
+    <span className="text-[#8B5A00]">{icon}</span>
     <span className={`text-sm font-bold ${selected ? 'text-[#8B5A00]' : 'text-[#6f6257]'}`}>{label}</span>
     <span className="text-[10px] text-[#8c755e] leading-tight">{description}</span>
   </button>
@@ -208,14 +209,14 @@ const Auth = () => {
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#8c755e]">Continue as...</label>
                 <div className="flex gap-3">
                   <RoleCard
-                    icon="💑"
+                    icon={<Heart className="h-6 w-6" />}
                     label="Couple"
                     description="Plan your wedding registry"
                     selected={loginRole === 'couple'}
                     onSelect={() => handleLoginRoleSelect('couple')}
                   />
                   <RoleCard
-                    icon="🎁"
+                    icon={<Gift className="h-6 w-6" />}
                     label="Guest"
                     description="Find and contribute to weddings"
                     selected={loginRole === 'guest'}
@@ -259,14 +260,14 @@ const Auth = () => {
                     <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#8c755e]">I am a...</label>
                     <div className="flex gap-3">
                       <RoleCard
-                        icon="💑"
+                        icon={<Heart className="h-6 w-6" />}
                         label="Couple"
                         description="Plan your wedding registry"
                         selected={role === 'couple'}
                         onSelect={() => setRole('couple')}
                       />
                       <RoleCard
-                        icon="🎁"
+                        icon={<Gift className="h-6 w-6" />}
                         label="Guest"
                         description="Find and contribute to weddings"
                         selected={role === 'guest'}
