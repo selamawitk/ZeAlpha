@@ -99,8 +99,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Webhook must remain ABOVE express.json() to preserve the raw body for Stripe signature verification
 app.use('/api/webhooks', webhookRoutes);
 
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 // express-mongo-sanitize v2.2.0 assigns req.query = sanitized which throws on Express 5 (query is getter-only).
 // Use a custom version that sanitizes body/params normally and query in-place via Object.assign.
 app.use((req, res, next) => {
