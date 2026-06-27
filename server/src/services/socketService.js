@@ -2,12 +2,12 @@ import { Server } from 'socket.io';
 import Activity from '../models/Activity.js';
 let io;
 
-const clientOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
+const clientOrigins = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(s => s.trim());
 
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: clientOrigin,
+      origin: clientOrigins,
       methods: ['GET', 'POST'],
       credentials: true,
     },
