@@ -10,13 +10,11 @@ const Landing = () => {
     weddingCount: 0,
   });
   const [statsLoading, setStatsLoading] = useState(true);
-  const [statsError, setStatsError] = useState(false);
 
   useEffect(() => {
     const loadStats = async () => {
       try {
         setStatsLoading(true);
-        setStatsError(false);
         const data = await fetchPlatformStats();
 
         setStats({
@@ -25,7 +23,6 @@ const Landing = () => {
         });
       } catch (error) {
         console.error('Failed to load platform stats:', error);
-        setStatsError(true);
       } finally {
         setStatsLoading(false);
       }
@@ -105,10 +102,6 @@ const Landing = () => {
                     <div className="h-8 w-16 rounded bg-[#ead9c0]"></div>
                     <div className="mt-2 h-4 w-20 rounded bg-[#ead9c0]"></div>
                   </div>
-                </div>
-              ) : statsError ? (
-                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                  Unable to load platform stats.
                 </div>
               ) : (
               <div className="grid grid-cols-2 gap-5 pt-4">
