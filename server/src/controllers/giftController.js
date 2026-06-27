@@ -9,11 +9,12 @@ export const addGift = async (req, res) => {
   try {
     const { weddingId, type, name, description, imageUrl, totalPrice, deliveryOptions, category, priority, fulfillmentPreference, vendorId, vendorProductId } = req.body;
 
-    const wedding = await Wedding.findById(weddingId);
-    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
-
-    if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to add gifts to this wedding' });
+    if (weddingId && weddingId.match(/^[a-f\d]{24}$/i)) {
+      const wedding = await Wedding.findById(weddingId);
+      if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+      if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to add gifts to this wedding' });
+      }
     }
 
     const gift = await Gift.create({
@@ -80,11 +81,12 @@ export const updateGift = async (req, res) => {
     const gift = await Gift.findById(req.params.id);
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
-    const wedding = await Wedding.findById(gift.weddingId);
-    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
-
-    if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
+    if (gift.weddingId && gift.weddingId.match(/^[a-f\d]{24}$/i)) {
+      const wedding = await Wedding.findById(gift.weddingId);
+      if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+      if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized' });
+      }
     }
 
     const { name, description, imageUrl, totalPrice, deliveryOptions, category, priority, fulfillmentPreference, vendorId, vendorProductId } = req.body;
@@ -122,11 +124,12 @@ export const deleteGift = async (req, res) => {
     const gift = await Gift.findById(req.params.id);
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
-    const wedding = await Wedding.findById(gift.weddingId);
-    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
-
-    if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
+    if (gift.weddingId && gift.weddingId.match(/^[a-f\d]{24}$/i)) {
+      const wedding = await Wedding.findById(gift.weddingId);
+      if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+      if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized' });
+      }
     }
 
     await Gift.findByIdAndDelete(req.params.id);
@@ -196,11 +199,12 @@ export const updateGiftSettlement = async (req, res) => {
     const gift = await Gift.findById(req.params.id);
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
-    const wedding = await Wedding.findById(gift.weddingId);
-    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
-
-    if (new Date() < new Date(wedding.weddingDate)) {
-      return res.status(400).json({ message: 'Settlement only available after wedding date' });
+    if (gift.weddingId && gift.weddingId.match(/^[a-f\d]{24}$/i)) {
+      const wedding = await Wedding.findById(gift.weddingId);
+      if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+      if (new Date() < new Date(wedding.weddingDate)) {
+        return res.status(400).json({ message: 'Settlement only available after wedding date' });
+      }
     }
 
     if (gift.currentCollected >= gift.totalPrice) {
