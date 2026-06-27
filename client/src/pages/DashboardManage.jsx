@@ -78,9 +78,10 @@ const DashboardManage = () => {
 
   useEffect(() => {
     api.get('/health').catch(() => {});
+    setError('');
 
     const fetchGifts = async () => {
-      if (!weddingId) {
+      if (!weddingId || weddingId.length < 5) {
         setLoadingGifts(false);
         return;
       }
@@ -90,8 +91,12 @@ const DashboardManage = () => {
           `/gifts/wedding/${weddingId}`
         );
         setGifts(response.data);
+        setError('');
       } catch (err) {
-        setError('Failed to load gifts.');
+        setGifts([]);
+        if (err.response?.status !== 404) {
+          setError(err.response?.data?.message || 'Failed to load gifts.');
+        }
       } finally {
         setLoadingGifts(false);
       }
