@@ -17,7 +17,9 @@ router.post('/image', protect, (req, res, next) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
     const filename = req.file.filename;
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const proto = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    const baseUrl = `${proto}://${host}`;
     res.json({ url: `${baseUrl}/uploads/${filename}` });
   });
 });
