@@ -221,3 +221,21 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });
+
+// Graceful shutdown
+const shutdown = async (signal) => {
+  console.log(`\n${signal} received — shutting down gracefully...`);
+  server.close(() => {
+    console.log('HTTP server closed');
+  });
+  try {
+    await mongoose.connection.close();
+    console.log('MongoDB connection closed');
+  } catch (err) {
+    console.error('Error closing MongoDB:', err);
+  }
+  process.exit(0);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
