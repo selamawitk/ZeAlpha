@@ -203,6 +203,7 @@ export const uploadImage = async (file) => {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    timeout: 120000,
   });
 
   return data;

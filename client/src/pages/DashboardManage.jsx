@@ -77,6 +77,8 @@ const DashboardManage = () => {
   const textMuted = 'text-[#6f6257]';
 
   useEffect(() => {
+    api.get('/health').catch(() => {});
+
     const fetchGifts = async () => {
       if (!weddingId) {
         setLoadingGifts(false);
@@ -217,10 +219,11 @@ const DashboardManage = () => {
       });
       setEditGiftId(null);
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          'Unable to save gift.'
-      );
+      if (!err.response) {
+        setError('Server is waking up, please wait a moment and try again.');
+      } else {
+        setError(err.response?.data?.message || 'Unable to save gift.');
+      }
     } finally {
       setIsSubmitting(false);
       setUploadPhase('');
