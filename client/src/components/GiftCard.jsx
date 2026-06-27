@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Lock, Gift, Clock, Flame } from 'lucide-react';
+import { Lock, Gift, Clock, Flame, Share2 } from 'lucide-react';
 import api from '../api/api.js';
 
 const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
@@ -96,6 +96,28 @@ const GiftCard = ({ gift, onContribute = () => {} }) => {
         <div className="text-right text-sm font-bold text-[#2d2218] mt-1">
           {Math.round(progress)}% funded
         </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1">
+          <span className="text-2xl font-black text-[#8B5A00]">{Math.round(progress)}%</span>
+          <span className="text-xs text-[#6f6257]">funded</span>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            const url = `${window.location.origin}/digital-gift-card/${gift._id}`;
+            if (navigator.share) {
+              navigator.share({ title: gift.name, text: `Contribute to ${gift.name} on ZeAlpha!`, url });
+            } else {
+              navigator.clipboard.writeText(url);
+            }
+          }}
+          className="flex items-center gap-1 rounded-full border border-[#dcc6a7] bg-white/60 px-3 py-1.5 text-xs font-semibold text-[#6f6257] transition hover:bg-[#f5e7ca] hover:text-[#8B5A00]"
+        >
+          <Share2 size={12} />
+          Share
+        </button>
       </div>
 
       {gift.contributors && gift.contributors.length > 0 && (

@@ -164,6 +164,11 @@ const Registry = () => {
             </p>
           </div>
 
+          {gifts.length === 0 ? (
+            <div className="rounded-[2rem] bg-white p-8 shadow-premium text-center">
+              <p className="text-secondary text-sm">No gifts in this registry yet. Check back later!</p>
+            </div>
+          ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {gifts.map((gift) => (
               <GiftCard
@@ -173,6 +178,7 @@ const Registry = () => {
               />
             ))}
           </div>
+          )}
         </section>
 
         <aside className="space-y-6">
