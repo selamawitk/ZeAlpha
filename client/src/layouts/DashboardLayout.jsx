@@ -72,37 +72,37 @@ const DashboardLayout = () => {
           )}
 
           <nav className="space-y-1 px-2">
-            <NavLink to="/dashboard" end className={navItem}>
+            <NavLink to="/dashboard" end className={navItem} onClick={() => setMobileOpen(false)}>
               <LayoutDashboard size={18} className="shrink-0" />
               {!collapsed && <span className="animate-fadeIn">Overview</span>}
             </NavLink>
 
-            <NavLink to="/dashboard/gifts" className={navItem}>
+            <NavLink to="/dashboard/gifts" className={navItem} onClick={() => setMobileOpen(false)}>
               <Gift size={18} className="shrink-0" />
               {!collapsed && <span>Gifts</span>}
             </NavLink>
 
-            <NavLink to="/dashboard/manage" className={navItem}>
+            <NavLink to="/dashboard/manage" className={navItem} onClick={() => setMobileOpen(false)}>
               <Package size={18} className="shrink-0" />
               {!collapsed && <span>Add Gifts</span>}
             </NavLink>
 
-            <NavLink to="/dashboard/wallet" className={navItem}>
+            <NavLink to="/dashboard/wallet" className={navItem} onClick={() => setMobileOpen(false)}>
               <Wallet size={18} className="shrink-0" />
               {!collapsed && <span>Payouts</span>}
             </NavLink>
 
-            <NavLink to="/dashboard/fulfillment" className={navItem}>
+            <NavLink to="/dashboard/fulfillment" className={navItem} onClick={() => setMobileOpen(false)}>
               <Truck size={18} className="shrink-0" />
               {!collapsed && <span>Fulfillment</span>}
             </NavLink>
 
-            <NavLink to="/dashboard/settings" className={navItem}>
+            <NavLink to="/dashboard/settings" className={navItem} onClick={() => setMobileOpen(false)}>
               <Settings size={18} className="shrink-0" />
               {!collapsed && <span>Settings</span>}
             </NavLink>
 
-            <NavLink to="/dashboard/notifications" className={navItem}>
+            <NavLink to="/dashboard/notifications" className={navItem} onClick={() => setMobileOpen(false)}>
               <Bell size={18} className="shrink-0" />
               {!collapsed && <span>Notifications</span>}
             </NavLink>
