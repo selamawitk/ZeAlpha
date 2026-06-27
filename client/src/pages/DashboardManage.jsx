@@ -24,6 +24,7 @@ const DashboardManage = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadPhase, setUploadPhase] = useState('');
   const [vendors, setVendors] = useState([]);
   const [vendorProducts, setVendorProducts] = useState([]);
   const [loadingVendors, setLoadingVendors] = useState(false);
@@ -106,10 +107,33 @@ const DashboardManage = () => {
     }));
   };
 
-  const handleFileChange = (event) => {
+  const compressImage = (file) => new Promise((resolve) => {
+    if (!file.type.startsWith('image/')) return resolve(file);
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const max = 1200;
+      let { width, height } = img;
+      if (width > max || height > max) {
+        if (width > height) { height = (height / width) * max; width = max; }
+        else { width = (width / height) * max; height = max; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.8);
+    };
+    img.src = url;
+  });
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const compressed = await compressImage(file);
     setForm((prev) => ({
       ...prev,
-      imageFile: event.target.files[0],
+      imageFile: compressed,
     }));
   };
 
@@ -148,13 +172,16 @@ const DashboardManage = () => {
 
     setIsSubmitting(true);
     setError('');
+    setUploadPhase('');
 
     try {
       let imageUrl = '';
 
       if (form.imageFile) {
+        setUploadPhase('Uploading image...');
         const uploadRes = await uploadImage(form.imageFile);
         imageUrl = uploadRes.url;
+        setUploadPhase('Saving gift...');
       }
 
       const payload = {
@@ -196,6 +223,7 @@ const DashboardManage = () => {
       );
     } finally {
       setIsSubmitting(false);
+      setUploadPhase('');
     }
   };
 
@@ -417,7 +445,7 @@ const DashboardManage = () => {
                   className={`flex-1 rounded-2xl ${goldGradient} px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-[#8B5A00]/20 transition-all duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {isSubmitting
-                    ? 'Saving...'
+                    ? (uploadPhase || 'Saving...')
                     : editGiftId ? 'Update Gift' : 'Save Gift'}
                 </button>
 
