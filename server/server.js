@@ -124,7 +124,7 @@ app.get('/', (req, res) => {
 });
 
 // Health check endpoint for Render
-app.get('/health', (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
   const dbState = mongoose.connection.readyState;
   const dbStatus = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
   res.json({
