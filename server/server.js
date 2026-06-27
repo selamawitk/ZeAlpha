@@ -11,6 +11,7 @@ import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
 import rateLimit from 'express-rate-limit';
+import mongoose from 'mongoose';
 import connectDB from './src/config/db.js';
 import userRoutes from './src/routes/userRoutes.js';
 import weddingRoutes from './src/routes/weddingRoutes.js';
@@ -112,6 +113,19 @@ app.use(hpp());
 
 app.get('/', (req, res) => {
   res.json({ status: 'ZeAlpha API', message: 'Collaborative wedding gift platform backend' });
+});
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const dbStatus = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+  res.json({
+    status: dbState === 1 ? 'healthy' : 'unhealthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    database: dbStatus[dbState] || 'unknown',
+    memory: process.memoryUsage(),
+  });
 });
 
 app.use('/api/users', userRoutes);
