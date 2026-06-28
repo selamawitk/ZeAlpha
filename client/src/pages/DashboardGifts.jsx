@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { CheckCircle, XCircle, Clock } from 'lucide-react';
 import GiftManager from '../components/GiftManager.jsx';
 import api from '../api/api.js';
 import GiftCard from '../components/GiftCard.jsx';
@@ -11,6 +12,8 @@ const DashboardGifts = () => {
   const [gifts, setGifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pendingGifts, setPendingGifts] = useState([]);
+  const [approving, setApproving] = useState({});
 
   const goldGradient =
     'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
@@ -48,14 +51,102 @@ const DashboardGifts = () => {
       }
     };
 
+    const loadPendingGuestGifts = async () => {
+      const weddingId = user?.managedWedding;
+      if (!weddingId) return;
+      try {
+        const res = await api.get(`/gifts/guest/pending/${weddingId}`);
+        setPendingGifts(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        // non-critical
+      }
+    };
+
     loadGifts();
+    loadPendingGuestGifts();
   }, [user]);
+
+  const handleApproveGuestGift = async (giftId, status) => {
+    setApproving(prev => ({ ...prev, [giftId]: true }));
+    try {
+      await api.put(`/gifts/guest/${giftId}/approve`, { status });
+      setPendingGifts(prev => prev.filter(g => g._id !== giftId));
+      if (status === 'approved') {
+        const res = await api.get(`/gifts/wedding/${user?.managedWedding}`);
+        setGifts(res.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to update guest gift:', err);
+    } finally {
+      setApproving(prev => ({ ...prev, [giftId]: false }));
+    }
+  };
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`w-full max-w-full min-h-full ${pageBackground} px-5 py-10`}>
 
       {/* Gift Manager */}
       <GiftManager />
+
+      {/* Pending Guest Gifts */}
+      {pendingGifts.filter(g => g.status === 'pending').length > 0 && (
+        <div className={`rounded-[28px] p-8 ${glassCard} mb-8`}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+              <Clock size={20} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-[#2d2218]">Pending Guest Suggestions</h3>
+              <p className="text-xs text-[#6f6257]">Review and approve gift suggestions from guests</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {pendingGifts.filter(g => g.status === 'pending').map((gift) => (
+              <div key={gift._id} className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[#2d2218]">{gift.name}</p>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                        {gift.category || 'General'}
+                      </span>
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                        {gift.totalPrice?.toLocaleString()} ETB
+                      </span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        gift.type === 'fractional' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                      }`}>
+                        {gift.type === 'fractional' ? 'Shareable' : 'Unique'}
+                      </span>
+                    </div>
+                    {gift.description && (
+                      <p className="mt-1 text-xs text-[#6f6257]">{gift.description}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => handleApproveGuestGift(gift._id, 'approved')}
+                      disabled={approving[gift._id]}
+                      className="flex items-center gap-1 rounded-xl bg-green-600 px-4 py-2 text-xs font-bold text-white hover:bg-green-700 transition disabled:opacity-50"
+                    >
+                      <CheckCircle size={14} />
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleApproveGuestGift(gift._id, 'rejected')}
+                      disabled={approving[gift._id]}
+                      className="flex items-center gap-1 rounded-xl bg-red-500 px-4 py-2 text-xs font-bold text-white hover:bg-red-600 transition disabled:opacity-50"
+                    >
+                      <XCircle size={14} />
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Main Section */}
       <div className={`rounded-[28px] p-8 ${glassCard}`}>
