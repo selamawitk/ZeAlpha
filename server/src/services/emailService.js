@@ -101,6 +101,94 @@ export const sendPasswordResetEmail = async (userEmail, resetToken) => {
   return transporter.sendMail(mailOptions);
 };
 
+export const sendGiftSurgeAlert = async (coupleEmail, giftName, progress, giftLink) => {
+  const mailOptions = {
+    from: `"ZeAlpha Alerts" <${process.env.EMAIL_USER}>`,
+    to: coupleEmail,
+    subject: `🔥 ${giftName} is surging!`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #f59e0b;">Your guests are rallying!</h2>
+        <p>Your gift <strong>${giftName}</strong> is now <strong>${progress}% funded</strong> — guests are excited to contribute!</p>
+        <div style="margin-top: 30px; text-align: center;">
+          <a href="${clientUrl}${giftLink}" style="background-color: #f59e0b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">View Gift</a>
+        </div>
+      </div>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
+export const sendOrderStatusEmail = async (coupleEmail, giftName, vendorName, status, orderLink) => {
+  const statusEmoji = { pending: '📋', confirmed: '✅', ordered: '📦', shipped: '🚚', delivered: '🎉', cancelled: '❌' };
+  const mailOptions = {
+    from: `"ZeAlpha Orders" <${process.env.EMAIL_USER}>`,
+    to: coupleEmail,
+    subject: `Order ${status}: ${giftName}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #10b981;">${statusEmoji[status] || '📋'} Order ${status}</h2>
+        <p>Your order for <strong>${giftName}</strong>${vendorName ? ` from <strong>${vendorName}</strong>` : ''} is now <strong>${status}</strong>.</p>
+        <div style="margin-top: 30px; text-align: center;">
+          <a href="${clientUrl}${orderLink}" style="background-color: #10b981; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">View Order</a>
+        </div>
+      </div>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
+export const sendWithdrawalCreatedEmail = async (coupleEmail, amount) => {
+  const mailOptions = {
+    from: `"ZeAlpha Finance" <${process.env.EMAIL_USER}>`,
+    to: coupleEmail,
+    subject: 'Payout Request Received',
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #f59e0b;">Payout Request Submitted</h2>
+        <p>Your payout request of <strong>${amount} ETB</strong> has been received and is being reviewed.</p>
+        <p>We'll notify you when it's approved.</p>
+      </div>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
+export const sendWithdrawalApprovedEmail = async (coupleEmail, amount) => {
+  const mailOptions = {
+    from: `"ZeAlpha Finance" <${process.env.EMAIL_USER}>`,
+    to: coupleEmail,
+    subject: 'Payout Request Approved!',
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #10b981;">Payout Approved</h2>
+        <p>Your payout request of <strong>${amount} ETB</strong> has been approved.</p>
+        <p>We will process and send the funds to your bank account shortly.</p>
+      </div>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
+export const sendWeddingApproachingAlert = async (coupleEmail, weddingName, weddingDate, daysAway) => {
+  const mailOptions = {
+    from: `"ZeAlpha Reminders" <${process.env.EMAIL_USER}>`,
+    to: coupleEmail,
+    subject: `🎊 Your wedding is in ${daysAway} days!`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #f59e0b;">Your Big Day is Almost Here!</h2>
+        <p>Your wedding <strong>${weddingName}</strong> is <strong>${daysAway} days away</strong> (${new Date(weddingDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}).</p>
+        <p>Make sure your registry is complete and gifts are on track!</p>
+        <div style="margin-top: 30px; text-align: center;">
+          <a href="${clientUrl}/dashboard" style="background-color: #B8860B; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">Go to Dashboard</a>
+        </div>
+      </div>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
 export const sendSupportEmail = async ({ name, email, subject, message }) => {
   const mailOptions = {
     from: `"ZeAlpha Support" <${process.env.EMAIL_USER}>`,

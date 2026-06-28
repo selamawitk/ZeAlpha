@@ -5,6 +5,7 @@ import Gift from '../models/Gift.js';
 import Wedding from '../models/Wedding.js';
 import Notification from '../models/Notification.js';
 import { emitActivity, emitNotification, emitVendorOrderUpdate } from '../services/socketService.js';
+import { sendOrderStatusEmail } from '../services/emailService.js';
 
 // ── VENDOR CRUD ──
 
@@ -181,8 +182,8 @@ export const updateVendorOrderStatus = async (req, res) => {
     .populate('product', 'name image price')
     .populate('couple', 'name email');
 
-  const statusLabels = { confirmed: 'order_confirmed', shipped: 'order_shipped', delivered: 'order_delivered', cancelled: 'order_cancelled' };
-  const statusTitles = { confirmed: 'Order Confirmed', shipped: 'Order Shipped', delivered: 'Order Delivered', cancelled: 'Order Cancelled' };
+  const statusLabels = { confirmed: 'order_confirmed', ordered: 'order_created', shipped: 'order_shipped', delivered: 'order_delivered', cancelled: 'order_cancelled' };
+  const statusTitles = { confirmed: 'Order Confirmed', ordered: 'Order Placed', shipped: 'Order Shipped', delivered: 'Order Delivered', cancelled: 'Order Cancelled' };
 
   if (statusLabels[status]) {
     const notifyData = {
@@ -198,6 +199,22 @@ export const updateVendorOrderStatus = async (req, res) => {
 
     await Notification.create(notifyData);
     emitNotification(notifyData);
+
+    try {
+      const coupleUser = await (await import('../models/User.js')).default.findById(order.couple);
+      if (coupleUser?.email) {
+        await sendOrderStatusEmail(
+          coupleUser.email,
+          populated.gift?.name || 'gift',
+          populated.vendor?.name,
+          status,
+          '/dashboard/fulfillment'
+        );
+      }
+    } catch (emailErr) {
+      console.error('Order status email failed:', emailErr);
+    }
+
     emitActivity({
       weddingId: String(order.wedding),
       title: `Order ${status} for ${populated.gift?.name || 'gift'}`,

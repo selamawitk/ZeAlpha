@@ -3,7 +3,7 @@ import Gift from '../models/Gift.js';
 import Wedding from '../models/Wedding.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
-import { sendPayoutNotification } from '../services/emailService.js';
+import { sendPayoutNotification, sendWithdrawalCreatedEmail, sendWithdrawalApprovedEmail } from '../services/emailService.js';
 import { emitWithdrawalUpdate, emitNotification } from '../services/socketService.js';
 
 export const requestPayout = async (req, res) => {
@@ -66,14 +66,25 @@ export const requestPayout = async (req, res) => {
   });
 
   // Create notification
-  await Notification.create({
+  const createdNotify = {
     recipient: wedding.couple,
     weddingId,
     type: 'withdrawal_created',
     title: 'Payout Request Submitted',
     message: `Your payout request of ${totalAmount} ETB has been submitted for processing.`,
     link: '/dashboard/wallet'
-  });
+  };
+  await Notification.create(createdNotify);
+  emitNotification(createdNotify);
+
+  try {
+    const coupleUser = await User.findById(wedding.couple);
+    if (coupleUser?.email) {
+      await sendWithdrawalCreatedEmail(coupleUser.email, totalAmount);
+    }
+  } catch (err) {
+    console.error('Withdrawal created email failed:', err);
+  }
 
   emitWithdrawalUpdate(payout);
 
@@ -129,30 +140,30 @@ export const updatePayoutStatus = async (req, res) => {
       approved: 'Payout Approved', processing: 'Payout Processing', completed: 'Payout Completed', rejected: 'Payout Rejected'
     };
     const notifType = status === 'approved' || status === 'completed' ? 'withdrawal_approved' : 'withdrawal_created';
-    await Notification.create({
+    const statusNotify = {
       recipient: couple._id,
       weddingId: payout.weddingId._id,
       type: notifType,
       title: statusTitles[status] || `Payout ${status}`,
       message: `Your payout request for ${payout.totalAmount} ETB has been ${status === 'completed' ? 'processed and sent to your bank account' : status}.`,
       link: '/dashboard/wallet'
-    });
+    };
+    await Notification.create(statusNotify);
+    emitNotification(statusNotify);
   }
 
   emitWithdrawalUpdate(payout);
 
-  // Trigger Email Notification when payout is moved to 'completed'
-  if (status === 'completed' && oldStatus !== 'completed') {
-    if (couple && couple.email) {
-      try {
-        await sendPayoutNotification(
-          couple.email,
-          payout.totalAmount,
-          'bank_transfer'
-        );
-      } catch (error) {
-        console.error('Email notification failed:', error);
+  // Trigger Email Notifications
+  if (couple && couple.email) {
+    try {
+      if (status === 'approved' && oldStatus !== 'approved') {
+        await sendWithdrawalApprovedEmail(couple.email, payout.totalAmount);
+      } else if (status === 'completed' && oldStatus !== 'completed') {
+        await sendPayoutNotification(couple.email, payout.totalAmount, 'bank_transfer');
       }
+    } catch (error) {
+      console.error('Payout email notification failed:', error);
     }
   }
 

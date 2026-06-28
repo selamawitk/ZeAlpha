@@ -17,7 +17,7 @@ export const createStripeIntent = async (req, res) => {
 };
 
 export const createStripeCheckout = async (req, res) => {
-  const { giftId, giftName, amount, currency = 'usd' } = req.body;
+  const { giftId, giftName, amount, currency = 'usd', guestName, guestPhone, message } = req.body;
   if (!giftId || !amount) {
     return res.status(400).json({ message: 'giftId and amount are required' });
   }
@@ -68,6 +68,9 @@ export const createStripeCheckout = async (req, res) => {
       weddingId: String(weddingId),
       giftName: giftName || 'Wedding Gift',
       guestId: req.user?._id?.toString() || 'guest',
+      guestName: (guestName || '').slice(0, 100) || '',
+      guestPhone: (guestPhone || '').slice(0, 20) || '',
+      message: (message || '').slice(0, 500) || '',
     },
   });
 

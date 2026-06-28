@@ -1,6 +1,8 @@
 import { Server } from 'socket.io';
 import Activity from '../models/Activity.js';
 import Notification from '../models/Notification.js';
+import User from '../models/User.js';
+import { sendGiftSurgeAlert } from './emailService.js';
 let io;
 
 const clientOrigins = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(s => s.trim());
@@ -117,6 +119,16 @@ export const emitGiftSurge = async (gift) => {
         };
         await Notification.create(surgeNotify);
         io.to(String(room)).emit('notification:update', surgeNotify);
+
+        try {
+          const user = await User.findById(wedding.couple);
+          if (user?.email) {
+            const progress = Math.round((gift.currentCollected / gift.totalPrice) * 100);
+            await sendGiftSurgeAlert(user.email, gift.name, progress, surgeNotify.link);
+          }
+        } catch (emailErr) {
+          console.error('Gift surge email failed:', emailErr);
+        }
       }
     } catch (err) {
       console.error('Failed to persist gift_surge notification:', err);

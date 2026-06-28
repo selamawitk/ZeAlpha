@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
-import { contributeToGift } from '../api/api.js';
 import api from '../api/api.js';
 
 const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
@@ -23,6 +21,9 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
       giftName: gift.name,
       amount: Number(amount),
       currency: 'usd',
+      guestName: guestName.trim(),
+      guestPhone: guestPhone.trim(),
+      message: message.trim(),
     });
     window.location.href = data.url;
   };

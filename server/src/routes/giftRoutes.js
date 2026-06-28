@@ -14,7 +14,7 @@ router.route('/surging/:weddingId').get(getSurgingGifts);
 router.route('/registry/:slug').get(getWeddingRegistry); // Public route
 router.route('/:id/digital-card').get(getDigitalCard);
 router.route('/:id/toggle-lock').post(protect, toggleLock);
-router.route('/:id/unlock').post(protect, unlockGift);
+router.route('/:id/unlock').post(optionalProtect, unlockGift);
 router.route('/:id/settlement').put(protect, authorizeRoles('couple', 'admin'), updateGiftSettlement);
 router.route('/:id/delivery').put(protect, authorizeRoles('couple', 'admin'), updateGiftDelivery);
 router.route('/:id').get(getGiftById).put(protect, authorizeRoles('couple', 'admin'), updateGift).delete(protect, authorizeRoles('couple', 'admin'), deleteGift);

@@ -491,10 +491,12 @@ export const updateGiftDelivery = async (req, res) => {
 
     if (deliveryStatus) {
       const statusLabels = { not_shipped: 'Not shipped', processing: 'Processing', shipped: 'Shipped', in_transit: 'In transit', delivered: 'Delivered', cancelled: 'Cancelled' };
+      const deliveryTypeMap = { shipped: 'order_shipped', in_transit: 'order_shipped', delivered: 'order_delivered', cancelled: 'order_cancelled' };
+      const notifType = deliveryTypeMap[deliveryStatus] || 'order_shipped';
       await (await import('../models/Notification.js')).default.create({
         recipient: gift.weddingId?.couple || req.user?._id,
         weddingId: gift.weddingId,
-        type: 'order_shipped',
+        type: notifType,
         title: `Delivery update: ${gift.name}`,
         message: `Delivery status for "${gift.name}" is now: ${statusLabels[deliveryStatus] || deliveryStatus}`,
         link: '/dashboard/fulfillment',
@@ -502,7 +504,7 @@ export const updateGiftDelivery = async (req, res) => {
       emitNotification({
         recipient: gift.weddingId?.couple,
         weddingId: gift.weddingId,
-        type: 'order_shipped',
+        type: notifType,
         title: `Delivery update: ${gift.name}`,
         message: `Delivery status for "${gift.name}" is now: ${statusLabels[deliveryStatus] || deliveryStatus}`,
         link: '/dashboard/fulfillment',
@@ -511,7 +513,7 @@ export const updateGiftDelivery = async (req, res) => {
         weddingId: String(gift.weddingId),
         title: `Delivery update: ${gift.name}`,
         message: `"${gift.name}" delivery status changed to ${statusLabels[deliveryStatus] || deliveryStatus}`,
-        type: 'order_shipped',
+        type: notifType,
         timestamp: new Date(),
       });
     }

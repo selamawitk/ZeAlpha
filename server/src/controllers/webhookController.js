@@ -152,7 +152,7 @@ export const handleStripeWebhook = async (req, res) => {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const { giftId, giftName, guestId } = session.metadata;
+    const { giftId, giftName, guestId, guestName, guestPhone, message } = session.metadata;
     const amount = session.amount_total / 100;
     const transactionId = session.payment_intent;
 
@@ -163,8 +163,10 @@ export const handleStripeWebhook = async (req, res) => {
         if (gift) {
           const contributorEntry = {
             guestId: guestId !== 'guest' ? guestId : null,
-            name: session.customer_details?.name || session.customer_email || 'Guest',
+            name: guestName || session.customer_details?.name || session.customer_email || 'Guest',
+            phone: guestPhone || '',
             amount,
+            message: message || '',
             isAnonymous: false,
             timestamp: new Date()
           };
@@ -192,6 +194,8 @@ export const handleStripeWebhook = async (req, res) => {
             giftId,
             weddingId: gift.weddingId._id,
             amount,
+            guestPhone: guestPhone || '',
+            message: message || '',
             paymentMethod: 'stripe',
             transactionId,
             status: 'completed',

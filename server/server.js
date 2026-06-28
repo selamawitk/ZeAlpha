@@ -30,7 +30,9 @@ import vendorRoutes from './src/routes/vendorRoutes.js';
 import groupRoutes from './src/routes/groupRoutes.js';
 import activityRoutes from './src/routes/activityRoutes.js';
 import { notFound, errorHandler } from './src/middleware/errorMiddleware.js';
-import { initSocket } from './src/services/socketService.js';
+import { initSocket, emitNotification } from './src/services/socketService.js';
+import { sendWeddingApproachingAlert } from './src/services/emailService.js';
+import Notification from './src/models/Notification.js';
 
 connectDB();
 const __filename = fileURLToPath(import.meta.url);
@@ -217,6 +219,55 @@ const autoConvertGifts = async () => {
   }
 };
 setInterval(autoConvertGifts, 60 * 60 * 1000);
+
+// Daily check for approaching weddings (fires every 6 hours)
+const checkApproachingWeddings = async () => {
+  try {
+    const now = new Date();
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfWindow = new Date(sevenDaysFromNow.getFullYear(), sevenDaysFromNow.getMonth(), sevenDaysFromNow.getDate(), 23, 59, 59, 999);
+
+    const approachingWeddings = await Wedding.find({
+      weddingDate: { $gte: startOfToday, $lte: endOfWindow }
+    }).populate('couple', 'email name');
+
+    for (const wedding of approachingWeddings) {
+      const daysAway = Math.ceil((new Date(wedding.weddingDate) - now) / (1000 * 60 * 60 * 24));
+      if (daysAway < 0) continue;
+
+      const existingNotif = await Notification.findOne({
+        weddingId: wedding._id,
+        type: 'wedding_approaching',
+        createdAt: { $gte: startOfToday }
+      });
+      if (existingNotif) continue;
+
+      const notifyData = {
+        recipient: wedding.couple._id,
+        weddingId: wedding._id,
+        type: 'wedding_approaching',
+        title: `Your wedding is in ${daysAway} day${daysAway === 1 ? '' : 's'}!`,
+        message: `Your wedding "${wedding.weddingName}" is ${daysAway} day${daysAway === 1 ? '' : 's'} away. Make sure your registry is ready!`,
+        link: '/dashboard',
+      };
+      await Notification.create(notifyData);
+      emitNotification(notifyData);
+
+      if (wedding.couple?.email) {
+        try {
+          await sendWeddingApproachingAlert(wedding.couple.email, wedding.weddingName, wedding.weddingDate, daysAway);
+        } catch (emailErr) {
+          console.error('Wedding approaching email failed:', emailErr);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Approaching weddings check error:', err);
+  }
+};
+setInterval(checkApproachingWeddings, 6 * 60 * 60 * 1000);
+checkApproachingWeddings();
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
