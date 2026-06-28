@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Sparkles } from 'lucide-react';
 import { useSocket } from '../context/SocketContext.jsx';
 import api, { fetchBlessings, addBlessing } from '../api/api.js';
 import GiftCard from '../components/GiftCard.jsx';
 import LiveActivityFeed from '../components/LiveActivityFeed.jsx';
 import ContributionModal from '../components/ContributionModal.jsx';
+import AiSuggestion from '../components/AiSuggestion.jsx';
+import GuestGiftForm from '../components/GuestGiftForm.jsx';
 
 const Registry = () => {
   const { slug } = useParams();
@@ -14,6 +17,8 @@ const Registry = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedGift, setSelectedGift] = useState(null);
+  const [showAiSuggestion, setShowAiSuggestion] = useState(false);
+  const [showGuestGiftForm, setShowGuestGiftForm] = useState(false);
   const [blessings, setBlessings] = useState([]);
   const [blessingForm, setBlessingForm] = useState({ guestName: '', message: '' });
   const [blessingSubmitted, setBlessingSubmitted] = useState(false);
@@ -107,6 +112,25 @@ const Registry = () => {
     }
   };
 
+  const handleAiJoinGift = useCallback((rec) => {
+    if (rec.giftId) {
+      const gift = gifts.find(g => g._id === rec.giftId);
+      if (gift) {
+        setSelectedGift(gift);
+      }
+    }
+    setShowAiSuggestion(false);
+  }, [gifts]);
+
+  const handleAiCreateGift = useCallback(() => {
+    setShowAiSuggestion(false);
+    setShowGuestGiftForm(true);
+  }, []);
+
+  const handleGuestGiftCreated = useCallback(() => {
+    setShowGuestGiftForm(false);
+  }, []);
+
   if (loading) {
     return <div className="text-center py-16">Loading registry...</div>;
   }
@@ -194,7 +218,22 @@ const Registry = () => {
         </section>
 
         <aside className="space-y-6">
-                <LiveActivityFeed weddingId={wedding?._id} />
+          <div className="space-y-3">
+            <button
+              onClick={() => setShowAiSuggestion(true)}
+              className="w-full rounded-2xl bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-[#8B5A00]/20 transition-all duration-300 hover:brightness-110 flex items-center justify-center gap-2"
+            >
+              <Sparkles size={18} />
+              AI Gift Suggestion
+            </button>
+            <button
+              onClick={() => setShowGuestGiftForm(true)}
+              className="w-full rounded-2xl border-2 border-dashed border-[#B8860B]/40 bg-white/60 px-5 py-3.5 text-sm font-bold text-[#8B5A00] transition-all duration-300 hover:bg-[#f5e7ca] hover:border-[#B8860B] flex items-center justify-center gap-2"
+            >
+              + Create Custom Gift
+            </button>
+          </div>
+          <LiveActivityFeed weddingId={wedding?._id} />
 
           <div className="rounded-[2rem] bg-white p-6 shadow-premium">
             <h2 className="text-xl font-semibold text-primary-dark">Registry notes</h2>
@@ -287,6 +326,25 @@ const Registry = () => {
           </div>
         </aside>
       </div>
+
+      {showAiSuggestion && (
+        <AiSuggestion
+          weddingId={wedding?._id}
+          weddingName={wedding?.weddingName}
+          coupleName={wedding?.coupleName}
+          onJoinGift={handleAiJoinGift}
+          onCreateGift={handleAiCreateGift}
+          onClose={() => setShowAiSuggestion(false)}
+        />
+      )}
+
+      {showGuestGiftForm && (
+        <GuestGiftForm
+          weddingId={wedding?._id}
+          onCreated={handleGuestGiftCreated}
+          onClose={() => setShowGuestGiftForm(false)}
+        />
+      )}
 
       <ContributionModal
         gift={selectedGift}
