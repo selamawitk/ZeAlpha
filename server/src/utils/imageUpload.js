@@ -32,7 +32,7 @@ if (useCloudinary) {
   const uploadDir = path.join(__dirname, '../../uploads');
   fs.mkdirSync(uploadDir, { recursive: true });
   storage = multer.diskStorage({
-    destination: () => uploadDir,
+    destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => {
       const timestamp = Date.now();
       const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '-');

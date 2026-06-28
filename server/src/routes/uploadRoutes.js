@@ -1,10 +1,10 @@
 import express from 'express';
-import { protect } from '../middleware/authMiddleware.js';
+import { optionalProtect } from '../middleware/authMiddleware.js';
 import { upload, useCloudinary } from '../utils/imageUpload.js';
 
 const router = express.Router();
 
-router.post('/image', protect, (req, res, next) => {
+router.post('/image', optionalProtect, (req, res, next) => {
   upload.single('image')(req, res, (err) => {
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
