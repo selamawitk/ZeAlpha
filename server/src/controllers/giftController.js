@@ -1,4 +1,6 @@
 import Gift from '../models/Gift.js';
+import Contribution from '../models/Contribution.js';
+import Payment from '../models/Payment.js';
 import Wedding from '../models/Wedding.js';
 import { createDigitalCard } from '../utils/digitalCard.js';
 import { emitGiftUpdate, emitActivity, emitGiftSurge } from '../services/socketService.js';
