@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Bell, CheckCheck, Trash2, RefreshCw, Clock, Gift, CreditCard, MessageSquare, Award, UserPlus } from 'lucide-react';
+import { Bell, CheckCheck, Trash2, RefreshCw, Clock, Gift, CreditCard, MessageSquare, Award, UserPlus, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import api from '../api/api.js';
@@ -12,6 +12,8 @@ const NOTIFICATION_ICONS = {
   blessing: <MessageSquare className="h-5 w-5" />,
   milestone: <Award className="h-5 w-5" />,
   guest: <UserPlus className="h-5 w-5" />,
+  gift_surge: <TrendingUp className="h-5 w-5" />,
+  admin_alert: <AlertTriangle className="h-5 w-5" />,
 };
 
 const NOTIFICATION_BG = {
@@ -20,6 +22,8 @@ const NOTIFICATION_BG = {
   blessing: 'bg-purple-50 border-purple-200',
   milestone: 'bg-amber-50 border-amber-200',
   guest: 'bg-pink-50 border-pink-200',
+  gift_surge: 'bg-orange-50 border-orange-200',
+  admin_alert: 'bg-red-50 border-red-200',
 };
 
 const Notifications = () => {

@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import Activity from '../models/Activity.js';
+import Notification from '../models/Notification.js';
 let io;
 
 const clientOrigins = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(s => s.trim());
@@ -96,11 +97,30 @@ export const emitWithdrawalUpdate = (payout) => {
   }
 };
 
-export const emitGiftSurge = (gift) => {
+export const emitGiftSurge = async (gift) => {
   if (!io) return;
   const room = gift.weddingId?._id || gift.weddingId;
   if (room) {
     io.to(String(room)).emit('gift:surge', gift);
+
+    try {
+      const Wedding = (await import('../models/Wedding.js')).default;
+      const wedding = await Wedding.findById(room);
+      if (wedding) {
+        const surgeNotify = {
+          recipient: wedding.couple,
+          weddingId: room,
+          type: 'gift_surge',
+          title: `${gift.name} is surging!`,
+          message: `${gift.name} is over 80% funded (${Math.round((gift.currentCollected / gift.totalPrice) * 100)}%). Guests are rallying!`,
+          link: '/dashboard/gifts',
+        };
+        await Notification.create(surgeNotify);
+        io.to(String(room)).emit('notification:update', surgeNotify);
+      }
+    } catch (err) {
+      console.error('Failed to persist gift_surge notification:', err);
+    }
   }
 };
 
