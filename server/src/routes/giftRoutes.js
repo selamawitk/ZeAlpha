@@ -1,10 +1,13 @@
 import express from 'express';
-import { protect } from '../middleware/authMiddleware.js';
+import { optionalProtect, protect } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
-import { addGift, getGifts, getGiftById, getDigitalCard, toggleLock, unlockGift, getWeddingRegistry, getGiftRecommendations, getSurgingGifts, updateGiftSettlement, updateGift, deleteGift } from '../controllers/giftController.js';
+import { addGift, getGifts, getGiftById, getDigitalCard, toggleLock, unlockGift, getWeddingRegistry, getGiftRecommendations, getSurgingGifts, updateGiftSettlement, updateGift, deleteGift, createGuestGift, approveGuestGift, getPendingGuestGifts } from '../controllers/giftController.js';
 
 const router = express.Router();
 router.route('/').post(protect, authorizeRoles('couple', 'admin'), addGift);
+router.route('/guest').post(optionalProtect, createGuestGift);
+router.route('/guest/pending/:weddingId').get(protect, authorizeRoles('couple', 'admin'), getPendingGuestGifts);
+router.route('/guest/:id/approve').put(protect, authorizeRoles('couple', 'admin'), approveGuestGift);
 router.route('/wedding/:weddingId').get(getGifts);
 router.route('/recommendations/:weddingId').get(getGiftRecommendations);
 router.route('/surging/:weddingId').get(getSurgingGifts);

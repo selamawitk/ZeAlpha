@@ -2,6 +2,7 @@ import Gift from '../models/Gift.js';
 import Contribution from '../models/Contribution.js';
 import Payment from '../models/Payment.js';
 import Wedding from '../models/Wedding.js';
+import User from '../models/User.js';
 import { createDigitalCard } from '../utils/digitalCard.js';
 import { emitGiftUpdate, emitActivity, emitGiftSurge } from '../services/socketService.js';
 import Notification from '../models/Notification.js';
@@ -44,6 +45,143 @@ export const addGift = async (req, res) => {
     });
 
     res.status(201).json(gift);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const createGuestGift = async (req, res) => {
+  try {
+    const { weddingId, name, description, imageUrl, totalPrice, type, category } = req.body;
+
+    if (!weddingId || !name || !totalPrice || !type) {
+      return res.status(400).json({ message: 'weddingId, name, totalPrice, and type are required' });
+    }
+
+    const wedding = await Wedding.findById(weddingId);
+    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+
+    const gift = await Gift.create({
+      weddingId,
+      name,
+      description: description || '',
+      imageUrl: imageUrl || '',
+      type,
+      totalPrice: Number(totalPrice),
+      category: category || 'Other',
+      currentCollected: 0,
+      createdBy: req.user?._id || null,
+      createdByRole: 'guest',
+      guestCreatedGift: true,
+      status: 'pending',
+    });
+
+    const couple = await User.findById(wedding.couple);
+    if (couple) {
+      const notify = {
+        recipient: wedding.couple,
+        weddingId,
+        type: 'admin_alert',
+        title: 'New Guest Gift Suggestion',
+        message: `A guest suggested "${gift.name}" (${Number(totalPrice).toLocaleString()} ETB) for your registry.`,
+        link: '/dashboard/gifts',
+      };
+      await Notification.create(notify);
+      emitNotification(notify);
+    }
+
+    emitActivity({
+      weddingId: String(weddingId),
+      title: `Guest suggested: ${gift.name}`,
+      message: `A guest suggested "${gift.name}" for the registry (pending approval).`,
+      type: 'gift_created',
+      timestamp: new Date(),
+    });
+
+    res.status(201).json({
+      message: 'Gift suggestion submitted for review',
+      gift,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const approveGuestGift = async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Status must be approved or rejected' });
+    }
+
+    const gift = await Gift.findById(req.params.id);
+    if (!gift) return res.status(404).json({ message: 'Gift not found' });
+    if (!gift.guestCreatedGift) {
+      return res.status(400).json({ message: 'This gift was not created by a guest' });
+    }
+
+    if (gift.weddingId) {
+      const wedding = await Wedding.findById(gift.weddingId);
+      if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+      if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized' });
+      }
+    }
+
+    gift.status = status;
+    await gift.save();
+
+    if (status === 'approved') {
+      gift.status = 'open';
+      await gift.save();
+    }
+
+    const couple = await User.findById(gift.weddingId ? (await Wedding.findById(gift.weddingId)).couple : null);
+    if (couple) {
+      const notify = {
+        recipient: couple._id,
+        weddingId: gift.weddingId,
+        type: 'admin_alert',
+        title: status === 'approved' ? 'Guest Gift Approved' : 'Guest Gift Rejected',
+        message: status === 'approved'
+          ? `"${gift.name}" is now live on your registry.`
+          : `"${gift.name}" was rejected.`,
+        link: '/dashboard/gifts',
+      };
+      await Notification.create(notify);
+      emitNotification(notify);
+    }
+
+    emitGiftUpdate(gift);
+
+    res.json({ message: `Gift ${status}`, gift });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getPendingGuestGifts = async (req, res) => {
+  try {
+    const weddingId = req.params.weddingId || req.query.weddingId;
+    if (!weddingId) {
+      return res.status(400).json({ message: 'Wedding ID is required' });
+    }
+
+    if (req.user.role === 'couple') {
+      const wedding = await Wedding.findById(weddingId);
+      if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+      if (wedding.couple.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized' });
+      }
+    }
+
+    const gifts = await Gift.find({
+      weddingId,
+      guestCreatedGift: true,
+      status: { $in: ['pending', 'approved', 'rejected'] },
+    }).sort({ createdAt: -1 });
+
+    res.json(gifts);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -244,7 +382,10 @@ export const getWeddingRegistry = async (req, res) => {
     const wedding = await Wedding.findOne({ slug }).populate('couple', 'name email');
     if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
 
-    const gifts = await Gift.find({ weddingId: wedding._id });
+    const gifts = await Gift.find({
+      weddingId: wedding._id,
+      status: { $nin: ['pending', 'rejected'] },
+    });
 
     const coupleId = wedding.couple?._id || wedding.couple;
     const isCoupleAdmin = req.user && (String(coupleId) === String(req.user._id) || req.user.role === 'admin');

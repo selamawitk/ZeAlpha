@@ -206,4 +206,33 @@ export const uploadImage = async (file) => {
   return data;
 };
 
+//
+// AI & GUEST GIFTS
+//
+
+export const getAiRecommendation = async (weddingId, budget, relationship) => {
+  const { data } = await api.post('/ai/recommendation', { weddingId, budget, relationship });
+  return data;
+};
+
+export const getAiPlanner = async (weddingId, question) => {
+  const { data } = await api.post('/ai/planner', { weddingId, question });
+  return data;
+};
+
+export const createGuestGift = async (giftData) => {
+  const { data } = await api.post('/gifts/guest', giftData);
+  return data;
+};
+
+export const getPendingGuestGifts = async (weddingId) => {
+  const { data } = await api.get(`/gifts/guest/pending/${weddingId}`);
+  return data;
+};
+
+export const approveGuestGift = async (giftId, status) => {
+  const { data } = await api.put(`/gifts/guest/${giftId}/approve`, { status });
+  return data;
+};
+
 export default api;
