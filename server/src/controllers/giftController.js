@@ -244,11 +244,26 @@ export const getWeddingRegistry = async (req, res) => {
 
     const gifts = await Gift.find({ weddingId: wedding._id });
 
+    const coupleId = wedding.couple?._id || wedding.couple;
+    const isCoupleAdmin = req.user && (String(coupleId) === String(req.user._id) || req.user.role === 'admin');
+    if (!isCoupleAdmin) {
+      const privacy = wedding.privacySettings || {};
+      gifts.forEach(g => {
+        if (!privacy.showGuestNames) {
+          g.contributors.forEach(c => { if (!c.isAnonymous) c.name = 'Guest'; });
+        }
+        if (!privacy.showContributionAmounts) {
+          g.contributors.forEach(c => { c.amount = undefined; });
+        }
+      });
+    }
+
     const registry = {
       _id: wedding._id,
       slug: wedding.slug,
       weddingCode: wedding.weddingCode,
       coupleId: wedding.couple,
+      coupleName: wedding.couple?.name || '',
       weddingName: wedding.weddingName,
       weddingDate: wedding.weddingDate,
       description: wedding.description,
