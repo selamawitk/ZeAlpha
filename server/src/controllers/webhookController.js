@@ -48,7 +48,7 @@ export const handleStripeWebhook = async (req, res) => {
         .populate('weddingId');
 
       if (contribution && contribution.giftId) {
-        const gift = await Gift.findById(giftId);
+        const gift = await Gift.findById(giftId).populate('weddingId');
         if (gift) {
           const wasJustCompleted = gift.currentCollected >= gift.totalPrice && gift.status !== 'fullyFunded';
           if (wasJustCompleted) {

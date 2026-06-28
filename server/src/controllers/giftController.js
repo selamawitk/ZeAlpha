@@ -11,7 +11,7 @@ export const addGift = async (req, res) => {
   try {
     const { weddingId, type, name, description, imageUrl, totalPrice, deliveryOptions, category, priority, fulfillmentPreference, vendorId, vendorProductId } = req.body;
 
-    if (weddingId && weddingId.match(/^[a-f\d]{24}$/i)) {
+    if (weddingId) {
       const wedding = await Wedding.findById(weddingId);
       if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
       if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
@@ -83,7 +83,7 @@ export const updateGift = async (req, res) => {
     const gift = await Gift.findById(req.params.id);
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
-    if (gift.weddingId && gift.weddingId.match(/^[a-f\d]{24}$/i)) {
+    if (gift.weddingId) {
       const wedding = await Wedding.findById(gift.weddingId);
       if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
       if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
@@ -126,7 +126,7 @@ export const deleteGift = async (req, res) => {
     const gift = await Gift.findById(req.params.id);
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
-    if (gift.weddingId && gift.weddingId.match(/^[a-f\d]{24}$/i)) {
+    if (gift.weddingId) {
       const wedding = await Wedding.findById(gift.weddingId);
       if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
       if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
@@ -201,7 +201,7 @@ export const updateGiftSettlement = async (req, res) => {
     const gift = await Gift.findById(req.params.id);
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
-    if (gift.weddingId && gift.weddingId.match(/^[a-f\d]{24}$/i)) {
+    if (gift.weddingId) {
       const wedding = await Wedding.findById(gift.weddingId);
       if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
       if (new Date() < new Date(wedding.weddingDate)) {
@@ -224,7 +224,7 @@ export const updateGiftSettlement = async (req, res) => {
 
     emitGiftUpdate(gift);
     emitActivity({
-      weddingId: String(gift.weddingId._id || gift.weddingId),
+      weddingId: String(gift.weddingId),
       title: `Gift settled: ${gift.name}`,
       message: `${gift.name} was settled as ${deliveryOptions}`,
       type: 'gift_settled',

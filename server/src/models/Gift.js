@@ -12,7 +12,8 @@ const contributorSchema = new mongoose.Schema({
 
 const giftSchema = new mongoose.Schema({
   weddingId: { 
-    type: String, 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Wedding', 
     required: true 
   },
   name: { type: String, required: true },
