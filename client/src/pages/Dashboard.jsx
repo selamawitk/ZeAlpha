@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Calendar, AlertTriangle, PartyPopper } from 'lucide-react';
+import { Calendar, AlertTriangle, PartyPopper, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import api, { updateGiftSettlement } from '../api/api.js';
+import AiPlanner from '../components/AiPlanner.jsx';
 
 const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
 const glassCard = 'bg-white/60 backdrop-blur-xl border border-[#D4C39B] shadow-[0_4px_16px_rgba(0,0,0,0.05)] rounded-[28px]';
@@ -28,6 +29,7 @@ const Dashboard = () => {
   const [loadingWedding, setLoadingWedding] = useState(true);
   const [loadingGifts, setLoadingGifts] = useState(true);
   const [settlementLoading, setSettlementLoading] = useState({});
+  const [showAiPlanner, setShowAiPlanner] = useState(false);
 
   useEffect(() => {
     if (user?.managedWedding) {
@@ -207,6 +209,27 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
+        {/* AI Wedding Planner */}
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="mb-6">
+          <button
+            onClick={() => setShowAiPlanner(true)}
+            className={`w-full p-8 rounded-[28px] bg-gradient-to-r from-[#4b3b2d] to-[#3d2e21] text-white flex flex-col md:flex-row justify-between items-center gap-5 hover:brightness-110 transition-all text-left`}
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
+                <Sparkles className="h-7 w-7 text-[#d4af37]" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">AI Wedding Planner</h2>
+                <p className="text-sm text-white/70 font-medium">Get intelligent gift suggestions for your registry</p>
+              </div>
+            </div>
+            <span className={`px-6 py-3 rounded-xl bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00] text-sm font-semibold`}>
+              Open Planner →
+            </span>
+          </button>
+        </motion.div>
+
         <motion.div whileHover={{ scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}>
           <div className={`p-8 rounded-[28px] bg-[#4b3b2d] text-white flex flex-col md:flex-row justify-between items-center gap-5`}>
             <div>
@@ -246,6 +269,13 @@ const Dashboard = () => {
               </div>
             </div>
           </motion.div>
+        )}
+
+        {showAiPlanner && (
+          <AiPlanner
+            weddingId={user?.managedWedding}
+            onClose={() => setShowAiPlanner(false)}
+          />
         )}
 
         <footer className={`mt-3 text-center text-[10px] ${textMuted} font-bold`}>
