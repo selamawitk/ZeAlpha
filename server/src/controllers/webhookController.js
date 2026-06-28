@@ -8,6 +8,7 @@ import { createDigitalCard } from '../utils/digitalCard.js';
 import { emitGiftUpdate, emitNewContribution, emitActivity, emitNotification } from '../services/socketService.js';
 import { sendGiftReceipt, sendWeddingFundedAlert } from '../services/emailService.js';
 import Notification from '../models/Notification.js';
+import { resolveWedding } from '../utils/weddingResolver.js';
 
 export const handleStripeWebhook = async (req, res) => {
   const signature = req.headers['stripe-signature'];
@@ -48,8 +49,9 @@ export const handleStripeWebhook = async (req, res) => {
         .populate('weddingId');
 
       if (contribution && contribution.giftId) {
-        const gift = await Gift.findById(giftId).populate('weddingId');
+        const gift = await Gift.findById(giftId);
         if (gift) {
+          const weddingRes = await resolveWedding(gift.weddingId);
           const wasJustCompleted = gift.currentCollected >= gift.totalPrice && gift.status !== 'fullyFunded';
           if (wasJustCompleted) {
             gift.status = 'fullyFunded';
@@ -65,7 +67,7 @@ export const handleStripeWebhook = async (req, res) => {
           emitGiftUpdate(gift);
 
           if (wasJustCompleted) {
-            const coupleId = gift.weddingId?.couple || contribution.weddingId?.couple;
+            const coupleId = weddingRes?.couple || contribution.weddingId?.couple;
             const cNotify = { recipient: coupleId, weddingId: contribution.weddingId?._id || contribution.weddingId, type: 'gift_completed', title: `${gift.name} Fully Funded!`, message: `Your gift "${gift.name}" has reached 100% funding with ${gift.currentCollected} ETB.`, link: '/dashboard' };
             await Notification.create(cNotify);
             emitNotification(cNotify);
@@ -105,7 +107,7 @@ export const handleStripeWebhook = async (req, res) => {
         });
 
         // Create notification for couple
-        const coupleId = gift.weddingId?.couple || contribution.weddingId?.couple;
+        const coupleId = weddingRes?.couple || contribution.weddingId?.couple;
         if (coupleId) {
           await Notification.create({
             recipient: coupleId,
@@ -159,8 +161,9 @@ export const handleStripeWebhook = async (req, res) => {
     if (giftId && transactionId) {
       const existingContribution = await Contribution.findOne({ transactionId });
       if (!existingContribution) {
-        const gift = await Gift.findById(giftId).populate('weddingId');
+        const gift = await Gift.findById(giftId);
         if (gift) {
+          const weddingRes = await resolveWedding(gift.weddingId);
           const contributorEntry = {
             guestId: guestId !== 'guest' ? guestId : null,
             name: guestName || session.customer_details?.name || session.customer_email || 'Guest',
@@ -192,7 +195,7 @@ export const handleStripeWebhook = async (req, res) => {
           const contribution = await Contribution.create({
             guestId: guestId !== 'guest' ? guestId : null,
             giftId,
-            weddingId: gift.weddingId._id,
+            weddingId: gift.weddingId,
             amount,
             guestPhone: guestPhone || '',
             message: message || '',
@@ -210,7 +213,7 @@ export const handleStripeWebhook = async (req, res) => {
             transactionId
           });
 
-          const wedding = await Wedding.findById(gift.weddingId._id);
+          const wedding = weddingRes;
           if (wedding) {
             wedding.stats.totalRaised = (wedding.stats.totalRaised || 0) + amount;
             await wedding.save();
@@ -225,18 +228,18 @@ export const handleStripeWebhook = async (req, res) => {
           emitGiftUpdate(updatedGift);
           emitNewContribution(contribution);
           emitActivity({
-            weddingId: String(gift.weddingId._id),
+            weddingId: String(gift.weddingId),
             title: `${contributorEntry.name} contributed to ${giftName || gift.name}`,
             message: `${contributorEntry.name} added ${amount} ETB`,
             type: 'contribution',
             timestamp: new Date()
           });
 
-          const coupleId = gift.weddingId.couple;
+          const coupleId = weddingRes?.couple;
           if (coupleId) {
             await Notification.create({
               recipient: coupleId,
-              weddingId: gift.weddingId._id,
+              weddingId: gift.weddingId,
               type: 'contribution',
               title: 'New contribution received',
               message: `${contributorEntry.name} contributed ${amount} ETB to ${giftName || gift.name}`,
@@ -247,17 +250,17 @@ export const handleStripeWebhook = async (req, res) => {
           if (willComplete) {
             const digitalCardData = createDigitalCard(
               updatedGift.toObject(),
-              gift.weddingId,
+              weddingRes,
               updatedGift.contributors
             );
             await Gift.findByIdAndUpdate(updatedGift._id, { digitalCardData, digitalCardUrl: `/api/gifts/${updatedGift._id}/digital-card` });
 
-            const cNotify = { recipient: coupleId, weddingId: gift.weddingId._id, type: 'gift_completed', title: `${giftName || gift.name} Fully Funded!`, message: `Your gift "${giftName || gift.name}" has reached 100% funding with ${updatedGift.currentCollected} ETB.`, link: '/dashboard' };
+            const cNotify = { recipient: coupleId, weddingId: gift.weddingId, type: 'gift_completed', title: `${giftName || gift.name} Fully Funded!`, message: `Your gift "${giftName || gift.name}" has reached 100% funding with ${updatedGift.currentCollected} ETB.`, link: '/dashboard' };
             await Notification.create(cNotify);
             emitNotification(cNotify);
-            emitActivity({ weddingId: String(gift.weddingId._id), title: `${giftName || gift.name} fully funded`, message: `${giftName || gift.name} reached 100% funding (${updatedGift.currentCollected} ETB).`, type: 'gift_completed', timestamp: new Date() });
+            emitActivity({ weddingId: String(gift.weddingId), title: `${giftName || gift.name} fully funded`, message: `${giftName || gift.name} reached 100% funding (${updatedGift.currentCollected} ETB).`, type: 'gift_completed', timestamp: new Date() });
             if (guestId && guestId !== 'guest') {
-              const gNotify = { recipient: guestId, weddingId: gift.weddingId._id, type: 'gift_completed', title: `You helped complete ${giftName || gift.name}!`, message: `Your contribution helped fully fund "${giftName || gift.name}". Thank you!`, link: '/guest' };
+              const gNotify = { recipient: guestId, weddingId: gift.weddingId, type: 'gift_completed', title: `You helped complete ${giftName || gift.name}!`, message: `Your contribution helped fully fund "${giftName || gift.name}". Thank you!`, link: '/guest' };
               await Notification.create(gNotify);
               emitNotification(gNotify);
             }
@@ -272,7 +275,7 @@ export const handleStripeWebhook = async (req, res) => {
                   : null;
                 if (product) {
                   const order = await VendorOrder.create({
-                    wedding: gift.weddingId._id,
+                    wedding: gift.weddingId,
                     gift: updatedGift._id,
                     vendor: product.vendorId,
                     product: product._id,
@@ -288,10 +291,10 @@ export const handleStripeWebhook = async (req, res) => {
                     .populate('product', 'name');
                   if (populated) {
                     const { emitVendorOrderUpdate } = await import('../services/socketService.js');
-                    const oNotify = { recipient: coupleId, weddingId: gift.weddingId._id, type: 'order_created', title: 'Vendor Order Created', message: `Your order for ${updatedGift.name} has been placed with ${populated.vendor?.name || 'vendor'}.`, link: '/dashboard/fulfillment' };
+                    const oNotify = { recipient: coupleId, weddingId: gift.weddingId, type: 'order_created', title: 'Vendor Order Created', message: `Your order for ${updatedGift.name} has been placed with ${populated.vendor?.name || 'vendor'}.`, link: '/dashboard/fulfillment' };
                     await Notification.create(oNotify);
                     emitNotification(oNotify);
-                    emitActivity({ weddingId: String(gift.weddingId._id), title: `${updatedGift.name} order created`, message: `A vendor order was created automatically for ${updatedGift.name}.`, type: 'order_created', timestamp: new Date() });
+                    emitActivity({ weddingId: String(gift.weddingId), title: `${updatedGift.name} order created`, message: `A vendor order was created automatically for ${updatedGift.name}.`, type: 'order_created', timestamp: new Date() });
                     emitVendorOrderUpdate(populated);
                   }
                 }

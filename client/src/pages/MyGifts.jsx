@@ -35,7 +35,15 @@ const MyGifts = () => {
     setCodeError('');
     setCodeResult(null);
     try {
-      const { data } = await api.get(`/weddings/slug/${encodeURIComponent(codeInput.trim().toLowerCase())}`);
+      const trimmed = codeInput.trim().toLowerCase();
+      let data;
+      try {
+        const slugRes = await api.get(`/weddings/slug/${encodeURIComponent(trimmed)}`);
+        data = slugRes.data;
+      } catch {
+        const codeRes = await api.get(`/weddings/code/${encodeURIComponent(trimmed.toUpperCase())}`);
+        data = codeRes.data;
+      }
       setCodeResult(data);
     } catch (err) {
       if (err.response?.status === 404) {

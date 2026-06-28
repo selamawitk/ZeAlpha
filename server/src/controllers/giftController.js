@@ -3,6 +3,7 @@ import Contribution from '../models/Contribution.js';
 import Payment from '../models/Payment.js';
 import Wedding from '../models/Wedding.js';
 import User from '../models/User.js';
+import { resolveWedding } from '../utils/weddingResolver.js';
 import { createDigitalCard } from '../utils/digitalCard.js';
 import { emitGiftUpdate, emitActivity, emitGiftSurge } from '../services/socketService.js';
 import Notification from '../models/Notification.js';
@@ -13,7 +14,7 @@ export const addGift = async (req, res) => {
     const { weddingId, type, name, description, imageUrl, totalPrice, deliveryOptions, category, priority, fulfillmentPreference, vendorId, vendorProductId } = req.body;
 
     if (weddingId) {
-      const wedding = await Wedding.findById(weddingId);
+      const wedding = await resolveWedding(weddingId);
       if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
       if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: 'Not authorized to add gifts to this wedding' });
@@ -58,7 +59,7 @@ export const createGuestGift = async (req, res) => {
       return res.status(400).json({ message: 'weddingId, name, totalPrice, and type are required' });
     }
 
-    const wedding = await Wedding.findById(weddingId);
+    const wedding = await resolveWedding(weddingId);
     if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
 
     const gift = await Gift.create({
@@ -121,7 +122,7 @@ export const approveGuestGift = async (req, res) => {
     }
 
     if (gift.weddingId) {
-      const wedding = await Wedding.findById(gift.weddingId);
+      const wedding = await resolveWedding(gift.weddingId);
       if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
       if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: 'Not authorized' });
@@ -136,7 +137,8 @@ export const approveGuestGift = async (req, res) => {
       await gift.save();
     }
 
-    const couple = await User.findById(gift.weddingId ? (await Wedding.findById(gift.weddingId)).couple : null);
+    const weddingRes = gift.weddingId ? await resolveWedding(gift.weddingId) : null;
+    const couple = await User.findById(weddingRes?.couple);
     if (couple) {
       const notify = {
         recipient: couple._id,
@@ -168,7 +170,7 @@ export const getPendingGuestGifts = async (req, res) => {
     }
 
     if (req.user.role === 'couple') {
-      const wedding = await Wedding.findById(weddingId);
+      const wedding = await resolveWedding(weddingId);
       if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
       if (wedding.couple.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: 'Not authorized' });
@@ -208,7 +210,7 @@ export const getGifts = async (req, res) => {
 
 export const getGiftById = async (req, res) => {
   try {
-    const gift = await Gift.findById(req.params.id).populate('weddingId');
+    const gift = await Gift.findById(req.params.id);
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
     res.json(gift);
   } catch (error) {
@@ -222,7 +224,7 @@ export const updateGift = async (req, res) => {
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
     if (gift.weddingId) {
-      const wedding = await Wedding.findById(gift.weddingId);
+      const wedding = await resolveWedding(gift.weddingId);
       if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
       if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: 'Not authorized' });
@@ -265,7 +267,7 @@ export const deleteGift = async (req, res) => {
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
     if (gift.weddingId) {
-      const wedding = await Wedding.findById(gift.weddingId);
+      const wedding = await resolveWedding(gift.weddingId);
       if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
       if (req.user.role === 'couple' && wedding.couple.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: 'Not authorized' });
@@ -284,7 +286,7 @@ export const deleteGift = async (req, res) => {
 
 export const getDigitalCard = async (req, res) => {
   try {
-    const gift = await Gift.findById(req.params.id).populate('weddingId');
+    const gift = await Gift.findById(req.params.id);
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
     if (!gift.digitalCardData) return res.status(404).json({ message: 'Digital card not available yet' });
     res.json(JSON.parse(gift.digitalCardData));
@@ -340,7 +342,7 @@ export const updateGiftSettlement = async (req, res) => {
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
     if (gift.weddingId) {
-      const wedding = await Wedding.findById(gift.weddingId);
+      const wedding = await resolveWedding(gift.weddingId);
       if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
       if (new Date() < new Date(wedding.weddingDate)) {
         return res.status(400).json({ message: 'Settlement only available after wedding date' });
@@ -362,7 +364,7 @@ export const updateGiftSettlement = async (req, res) => {
 
     emitGiftUpdate(gift);
     emitActivity({
-      weddingId: String(gift.weddingId),
+      weddingId: gift.weddingId,
       title: `Gift settled: ${gift.name}`,
       message: `${gift.name} was settled as ${deliveryOptions}`,
       type: 'gift_settled',
@@ -489,12 +491,14 @@ export const updateGiftDelivery = async (req, res) => {
     const { emitGiftUpdate, emitNotification, emitActivity } = await import('../services/socketService.js');
     emitGiftUpdate(gift);
 
+    const weddingRes = await resolveWedding(gift.weddingId);
+
     if (deliveryStatus) {
       const statusLabels = { not_shipped: 'Not shipped', processing: 'Processing', shipped: 'Shipped', in_transit: 'In transit', delivered: 'Delivered', cancelled: 'Cancelled' };
       const deliveryTypeMap = { shipped: 'order_shipped', in_transit: 'order_shipped', delivered: 'order_delivered', cancelled: 'order_cancelled' };
       const notifType = deliveryTypeMap[deliveryStatus] || 'order_shipped';
       await (await import('../models/Notification.js')).default.create({
-        recipient: gift.weddingId?.couple || req.user?._id,
+        recipient: weddingRes?.couple || req.user?._id,
         weddingId: gift.weddingId,
         type: notifType,
         title: `Delivery update: ${gift.name}`,
@@ -502,7 +506,7 @@ export const updateGiftDelivery = async (req, res) => {
         link: '/dashboard/fulfillment',
       });
       emitNotification({
-        recipient: gift.weddingId?.couple,
+        recipient: weddingRes?.couple,
         weddingId: gift.weddingId,
         type: notifType,
         title: `Delivery update: ${gift.name}`,
@@ -510,7 +514,7 @@ export const updateGiftDelivery = async (req, res) => {
         link: '/dashboard/fulfillment',
       });
       emitActivity({
-        weddingId: String(gift.weddingId),
+        weddingId: gift.weddingId,
         title: `Delivery update: ${gift.name}`,
         message: `"${gift.name}" delivery status changed to ${statusLabels[deliveryStatus] || deliveryStatus}`,
         type: notifType,

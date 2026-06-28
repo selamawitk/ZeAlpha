@@ -8,6 +8,7 @@ import { createDigitalCard } from '../utils/digitalCard.js';
 import { sendGiftReceipt, sendWeddingFundedAlert } from '../services/emailService.js';
 import Notification from '../models/Notification.js';
 import VendorOrder from '../models/VendorOrder.js';
+import { resolveWedding } from '../utils/weddingResolver.js';
 
 const CONTRIBUTION_METHODS = ['stripe'];
 
@@ -22,8 +23,9 @@ export const createContribution = async (req, res) => {
     return res.status(400).json({ message: 'Invalid payment method' });
   }
 
-  const gift = await Gift.findById(giftId).populate('weddingId');
+  const gift = await Gift.findById(giftId);
   if (!gift) return res.status(404).json({ message: 'Gift not found' });
+  const weddingRes = await resolveWedding(gift.weddingId);
 
   if (transactionId) {
     const existingContribution = await Contribution.findOne({ transactionId });
@@ -67,7 +69,7 @@ export const createContribution = async (req, res) => {
   };
 
   const willCompleteGift = gift.currentCollected + amount >= gift.totalPrice;
-  const weddingForCard = gift.weddingId;
+  const weddingForCard = weddingRes;
   const digitalCardData = willCompleteGift
     ? createDigitalCard(
         { ...gift.toObject(), currentCollected: gift.currentCollected + amount, contributors: [...gift.contributors, contributorEntry] },
@@ -107,7 +109,7 @@ export const createContribution = async (req, res) => {
   const contribution = await Contribution.create({
     guestId: guestUserId,
     giftId: gift._id,
-    weddingId: gift.weddingId._id || gift.weddingId,
+    weddingId: gift.weddingId,
     amount,
     message,
     guestPhone,
@@ -127,7 +129,7 @@ export const createContribution = async (req, res) => {
     transactionId
   });
 
-  const wedding = gift.weddingId;
+  const wedding = weddingRes;
   if (wedding && isInstant) {
     wedding.stats.totalRaised += amount;
     if (guestUserId) {
@@ -150,7 +152,7 @@ export const createContribution = async (req, res) => {
         await sendGiftReceipt(req.user.email, req.user.name, amount, updatedGift.name, updatedGift.digitalCardUrl);
       }
       if (willCompleteGift) {
-        const couple = await User.findById(gift.weddingId.couple);
+        const couple = await User.findById(weddingRes.couple);
         if (couple) await sendWeddingFundedAlert(couple.email, updatedGift.name, updatedGift.totalPrice);
       }
     } catch (err) {
@@ -160,7 +162,7 @@ export const createContribution = async (req, res) => {
 
   const progressPercentage = Math.round((updatedGift.currentCollected / updatedGift.totalPrice) * 100);
   const activity = {
-    weddingId: String(updatedGift.weddingId),
+    weddingId: updatedGift.weddingId,
     title: `${contributorName} contributed to ${updatedGift.name}`,
     message: `${contributorName} added ${amount} ETB (${progressPercentage}% funded)`,
     type: 'contribution',
@@ -180,8 +182,8 @@ export const createContribution = async (req, res) => {
 
   // Save notification to DB
   await Notification.create({
-    recipient: gift.weddingId.couple,
-    weddingId: gift.weddingId._id || updatedGift.weddingId,
+    recipient: weddingRes.couple,
+    weddingId: gift.weddingId,
     type: 'contribution',
     title: 'New contribution',
     message: `${contributorName} contributed ${amount} ETB to ${updatedGift.name}`,
@@ -189,8 +191,8 @@ export const createContribution = async (req, res) => {
   });
 
   emitNotification({
-    recipient: gift.weddingId.couple,
-    weddingId: gift.weddingId._id || updatedGift.weddingId,
+    recipient: weddingRes.couple,
+    weddingId: gift.weddingId,
     type: 'contribution',
     title: 'New contribution',
     message: `${contributorName} contributed ${amount} ETB to ${updatedGift.name}`,
@@ -200,8 +202,8 @@ export const createContribution = async (req, res) => {
   // Gift completion notification
   if (willCompleteGift) {
     const completionNotify = {
-      recipient: gift.weddingId.couple,
-      weddingId: gift.weddingId._id || updatedGift.weddingId,
+      recipient: weddingRes.couple,
+      weddingId: gift.weddingId,
       type: 'gift_completed',
       title: `${updatedGift.name} Fully Funded!`,
       message: `Your gift "${updatedGift.name}" has reached 100% funding with ${updatedGift.currentCollected} ETB.`,
@@ -210,7 +212,7 @@ export const createContribution = async (req, res) => {
     await Notification.create(completionNotify);
     emitNotification(completionNotify);
     emitActivity({
-      weddingId: String(updatedGift.weddingId),
+      weddingId: updatedGift.weddingId,
       title: `${updatedGift.name} fully funded`,
       message: `${updatedGift.name} reached 100% funding (${updatedGift.currentCollected} ETB).`,
       type: 'gift_completed',
@@ -219,7 +221,7 @@ export const createContribution = async (req, res) => {
     if (guestUserId) {
       const contributorNotify = {
         recipient: guestUserId,
-        weddingId: gift.weddingId._id || updatedGift.weddingId,
+        weddingId: gift.weddingId,
         type: 'gift_completed',
         title: `You helped complete ${updatedGift.name}!`,
         message: `Your contribution helped fully fund "${updatedGift.name}". Thank you!`,
@@ -239,11 +241,11 @@ export const createContribution = async (req, res) => {
         : null;
       if (product) {
         const order = await VendorOrder.create({
-          wedding: gift.weddingId._id || updatedGift.weddingId,
+          wedding: gift.weddingId,
           gift: updatedGift._id,
           vendor: product.vendorId,
           product: product._id,
-          couple: gift.weddingId.couple,
+          couple: weddingRes.couple,
           fundedAmount: updatedGift.currentCollected,
           productPrice: product.price,
           status: 'pending',
@@ -255,8 +257,8 @@ export const createContribution = async (req, res) => {
           .populate('product', 'name');
 
         const notifyData = {
-          recipient: gift.weddingId.couple,
-          weddingId: gift.weddingId._id || updatedGift.weddingId,
+          recipient: weddingRes.couple,
+          weddingId: gift.weddingId,
           type: 'order_created',
           title: 'Vendor Order Created',
           message: `Your order for ${updatedGift.name} has been placed with ${populated.vendor?.name || 'vendor'}.`,
@@ -265,7 +267,7 @@ export const createContribution = async (req, res) => {
         await Notification.create(notifyData);
         emitNotification(notifyData);
         emitActivity({
-          weddingId: String(updatedGift.weddingId),
+          weddingId: updatedGift.weddingId,
           title: `${updatedGift.name} order created`,
           message: `A vendor order was created automatically for ${updatedGift.name}.`,
           type: 'order_created',
@@ -314,8 +316,9 @@ export const updateContributionStatus = async (req, res) => {
   await contribution.save();
 
   if (status === 'completed' && oldStatus !== 'completed') {
-    const updatedGift = await Gift.findById(contribution.giftId._id).populate('weddingId');
+    const updatedGift = await Gift.findById(contribution.giftId._id);
     if (!updatedGift) return res.status(404).json({ message: 'Gift not found' });
+    const weddingRes2 = await resolveWedding(updatedGift.weddingId);
 
     const giftJustCompleted = updatedGift.currentCollected >= updatedGift.totalPrice && updatedGift.status !== 'fullyFunded';
     if (giftJustCompleted) {
@@ -331,8 +334,8 @@ export const updateContributionStatus = async (req, res) => {
       await updatedGift.save();
 
       const completionNotify = {
-        recipient: updatedGift.weddingId.couple,
-        weddingId: updatedGift.weddingId._id,
+        recipient: weddingRes2.couple,
+        weddingId: updatedGift.weddingId,
         type: 'gift_completed',
         title: `${updatedGift.name} Fully Funded!`,
         message: `Your gift "${updatedGift.name}" has reached 100% funding with ${updatedGift.currentCollected} ETB.`,
@@ -341,7 +344,7 @@ export const updateContributionStatus = async (req, res) => {
       await Notification.create(completionNotify);
       emitNotification(completionNotify);
       emitActivity({
-        weddingId: String(updatedGift.weddingId._id),
+        weddingId: updatedGift.weddingId,
         title: `${updatedGift.name} fully funded`,
         message: `${updatedGift.name} reached 100% funding (${updatedGift.currentCollected} ETB).`,
         type: 'gift_completed',
@@ -350,7 +353,7 @@ export const updateContributionStatus = async (req, res) => {
       if (contribution.guestId?._id) {
         const contributorNotify = {
           recipient: contribution.guestId._id,
-          weddingId: updatedGift.weddingId._id,
+          weddingId: updatedGift.weddingId,
           type: 'gift_completed',
           title: `You helped complete ${updatedGift.name}!`,
           message: `Your contribution helped fully fund "${updatedGift.name}". Thank you!`,
@@ -397,11 +400,11 @@ export const updateContributionStatus = async (req, res) => {
           : null;
         if (product) {
           const order = await VendorOrder.create({
-            wedding: updatedGift.weddingId._id,
+            wedding: updatedGift.weddingId,
             gift: updatedGift._id,
             vendor: product.vendorId,
             product: product._id,
-            couple: updatedGift.weddingId.couple,
+            couple: weddingRes2.couple,
             fundedAmount: updatedGift.currentCollected,
             productPrice: product.price,
             status: 'pending',
@@ -413,8 +416,8 @@ export const updateContributionStatus = async (req, res) => {
             .populate('product', 'name');
 
           const notifyData = {
-            recipient: updatedGift.weddingId.couple,
-            weddingId: updatedGift.weddingId._id,
+            recipient: weddingRes2.couple,
+            weddingId: updatedGift.weddingId,
             type: 'order_created',
             title: 'Vendor Order Created',
             message: `Your order for ${updatedGift.name} has been placed with ${populated.vendor?.name || 'vendor'}.`,
@@ -423,7 +426,7 @@ export const updateContributionStatus = async (req, res) => {
           await Notification.create(notifyData);
           emitNotification(notifyData);
           emitActivity({
-            weddingId: String(updatedGift.weddingId._id),
+            weddingId: updatedGift.weddingId,
             title: `${updatedGift.name} order created`,
             message: `A vendor order was created automatically for ${updatedGift.name}.`,
             type: 'order_created',

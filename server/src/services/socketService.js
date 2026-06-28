@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import Activity from '../models/Activity.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
+import { resolveWedding } from '../utils/weddingResolver.js';
 import { sendGiftSurgeAlert } from './emailService.js';
 let io;
 
@@ -62,7 +63,7 @@ const persistActivity = async (activity) => {
 
 export const emitGiftUpdate = (gift) => {
   if (!io) return;
-  const room = gift.weddingId?._id || gift.weddingId;
+  const room = gift.weddingId;
   if (room) {
     io.to(String(room)).emit('gift:update', gift);
   }
@@ -101,13 +102,12 @@ export const emitWithdrawalUpdate = (payout) => {
 
 export const emitGiftSurge = async (gift) => {
   if (!io) return;
-  const room = gift.weddingId?._id || gift.weddingId;
+  const room = gift.weddingId;
   if (room) {
     io.to(String(room)).emit('gift:surge', gift);
 
     try {
-      const Wedding = (await import('../models/Wedding.js')).default;
-      const wedding = await Wedding.findById(room);
+      const wedding = await resolveWedding(room);
       if (wedding) {
         const surgeNotify = {
           recipient: wedding.couple,

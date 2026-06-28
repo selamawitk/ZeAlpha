@@ -2,7 +2,7 @@ import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
 import Gift from '../models/Gift.js';
-import Wedding from '../models/Wedding.js';
+import { resolveWedding } from '../utils/weddingResolver.js';
 
 const router = express.Router();
 
@@ -10,16 +10,19 @@ const router = express.Router();
 router.get('/', protect, authorizeRoles('admin'), async (req, res) => {
   try {
     const gifts = await Gift.find({ deliveryOptions: 'store', status: 'purchased' })
-      .populate('weddingId', 'weddingName')
       .sort({ updatedAt: -1 });
-    const orders = gifts.map((gift, index) => ({
-      _id: gift._id,
-      orderId: `ORD-${1000 + index}`,
-      giftName: gift.name,
-      vendor: gift.weddingId?.weddingName || 'Unknown Wedding',
-      status: gift.status === 'purchased' ? 'ready' : 'pending',
-      createdAt: gift.updatedAt,
-    }));
+    const orders = [];
+    for (const gift of gifts) {
+      const wedding = await resolveWedding(gift.weddingId);
+      orders.push({
+        _id: gift._id,
+        orderId: `ORD-${1000 + orders.length}`,
+        giftName: gift.name,
+        vendor: wedding?.weddingName || 'Unknown Wedding',
+        status: gift.status === 'purchased' ? 'ready' : 'pending',
+        createdAt: gift.updatedAt,
+      });
+    }
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: error.message });

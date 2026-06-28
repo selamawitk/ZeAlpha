@@ -57,7 +57,7 @@ export const createStripeCheckout = async (req, res) => {
   }
 
   const origin = process.env.CLIENT_URL || 'http://localhost:5173';
-  const weddingId = gift.weddingId?._id || gift.weddingId;
+  const weddingId = gift.weddingId;
   const session = await createCheckoutSession({
     amount,
     currency,

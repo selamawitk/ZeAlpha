@@ -29,47 +29,11 @@ const DashboardManage = () => {
     totalPrice: '',
     type: 'fractional',
     fulfillmentPreference: 'cash',
-    vendorId: '',
-    vendorProductId: '',
     imageFile: null,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadPhase, setUploadPhase] = useState('');
-  const [vendors, setVendors] = useState([]);
-  const [vendorProducts, setVendorProducts] = useState([]);
-  const [loadingVendors, setLoadingVendors] = useState(false);
-
-  useEffect(() => {
-    const fetchVendors = async () => {
-      if (form.fulfillmentPreference !== 'vendor') {
-        setVendors([]);
-        setVendorProducts([]);
-        return;
-      }
-      setLoadingVendors(true);
-      try {
-        const { data } = await api.get('/vendors');
-        setVendors(data || []);
-      } catch {
-        setVendors([]);
-      } finally {
-        setLoadingVendors(false);
-      }
-    };
-    fetchVendors();
-  }, [form.fulfillmentPreference]);
-
-  const handleVendorChange = async (vendorId) => {
-    setForm(prev => ({ ...prev, vendorId, vendorProductId: '' }));
-    if (!vendorId) { setVendorProducts([]); return; }
-    try {
-      const { data } = await api.get(`/vendors/${vendorId}/products`);
-      setVendorProducts(data || []);
-    } catch {
-      setVendorProducts([]);
-    }
-  };
 
   const [weddingId, setWeddingId] = useState(
     user?.managedWedding || localStorage.getItem('weddingId') || ''
@@ -172,12 +136,9 @@ const DashboardManage = () => {
       description: gift.description || '',
       totalPrice: gift.totalPrice,
       type: gift.type,
-      fulfillmentPreference: gift.fulfillmentPreference || 'cash',
-      vendorId: gift.vendorId || '',
-      vendorProductId: gift.vendorProductId || '',
+      fulfillmentPreference: 'cash',
       imageFile: null,
     });
-    if (gift.vendorId) handleVendorChange(gift.vendorId);
     setEditGiftId(gift._id);
   };
 
@@ -211,10 +172,8 @@ const DashboardManage = () => {
         description: form.description,
         totalPrice: Number(form.totalPrice),
         type: form.type,
-        fulfillmentPreference: form.fulfillmentPreference,
+        fulfillmentPreference: 'cash',
         imageUrl,
-        vendorId: form.fulfillmentPreference === 'vendor' ? form.vendorId : null,
-        vendorProductId: form.fulfillmentPreference === 'vendor' ? form.vendorProductId : null,
       };
 
       let response;
@@ -232,8 +191,6 @@ const DashboardManage = () => {
         totalPrice: '',
         type: 'fractional',
         fulfillmentPreference: 'cash',
-        vendorId: '',
-        vendorProductId: '',
         imageFile: null,
       });
       setEditGiftId(null);
@@ -382,61 +339,10 @@ const DashboardManage = () => {
                 <label className="mb-2 block text-sm font-semibold text-[#6f6257]">
                   Fulfillment Preference
                 </label>
-                <select
-                  name="fulfillmentPreference"
-                  value={form.fulfillmentPreference}
-                  onChange={handleChange}
-                  className="w-full rounded-2xl border border-[#e5d7c4] bg-white/65 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
-                >
-                  <option value="cash">
-                    Cash Conversion — Convert funds to cash on completion
-                  </option>
-                  <option value="vendor">
-                    Vendor Fulfillment — Automatically order from vendor on completion
-                  </option>
-                </select>
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                  🚧 Vendor fulfillment is coming soon. All gifts currently convert to cash on completion — you'll receive the funds directly.
+                </div>
               </div>
-
-              {/* Vendor Selection — only when vendor fulfillment */}
-              {form.fulfillmentPreference === 'vendor' && (
-                <>
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-[#6f6257]">Vendor</label>
-                    <select
-                      value={form.vendorId}
-                      onChange={(e) => handleVendorChange(e.target.value)}
-                      className="w-full rounded-2xl border border-[#e5d7c4] bg-white/65 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
-                    >
-                      <option value="">Select a vendor...</option>
-                      {loadingVendors ? (
-                        <option disabled>Loading vendors...</option>
-                      ) : vendors.length === 0 ? (
-                        <option disabled>No vendors available</option>
-                      ) : vendors.map(v => (
-                        <option key={v._id} value={v._id}>{v.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {form.vendorId && (
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-[#6f6257]">Product</label>
-                      <select
-                        value={form.vendorProductId}
-                        onChange={(e) => setForm(p => ({ ...p, vendorProductId: e.target.value }))}
-                        className="w-full rounded-2xl border border-[#e5d7c4] bg-white/65 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
-                      >
-                        <option value="">Select a product...</option>
-                        {vendorProducts.length === 0 ? (
-                          <option disabled>No products for this vendor</option>
-                        ) : vendorProducts.map(p => (
-                          <option key={p._id} value={p._id}>{p.name} — ETB {p.price?.toLocaleString()}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </>
-              )}
 
               {/* Image */}
               <div>
@@ -475,7 +381,7 @@ const DashboardManage = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setForm({ name: '', description: '', totalPrice: '', type: 'fractional', fulfillmentPreference: 'cash', vendorId: '', vendorProductId: '', imageFile: null });
+                      setForm({ name: '', description: '', totalPrice: '', type: 'fractional', fulfillmentPreference: 'cash', imageFile: null });
                       setEditGiftId(null);
                       setError('');
                     }}
