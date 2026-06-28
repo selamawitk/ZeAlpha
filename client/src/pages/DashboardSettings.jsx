@@ -12,15 +12,8 @@ const DashboardSettings = () => {
     bannerImage: '',
   });
 
-  const [telebirr, setTelebirr] = useState({
-    phoneNumber: '',
-    accountName: '',
-  });
-
   const [saved, setSaved] = useState(false);
-  const [telebirrSaved, setTelebirrSaved] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [telebirrLoading, setTelebirrLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
@@ -34,10 +27,6 @@ const DashboardSettings = () => {
             weddingDate: w.weddingDate ? w.weddingDate.split('T')[0] : '',
             description: w.description || '',
             bannerImage: w.bannerImage || '',
-          });
-          setTelebirr({
-            phoneNumber: w.telebirrSettings?.phoneNumber || '',
-            accountName: w.telebirrSettings?.accountName || '',
           });
         })
         .catch(err => console.error('Failed to load wedding profile', err))
@@ -210,66 +199,6 @@ const DashboardSettings = () => {
           </form>
           )}
 
-          {/* Telebirr Settings */}
-          {!fetching && (
-            <div className={`mt-8 rounded-[28px] p-8 ${glassCard}`}>
-              <div className="mb-6">
-                <h2 className={`text-2xl font-black tracking-tight ${textPrimary}`}>
-                  Telebirr Settings
-                </h2>
-                <p className={`mt-2 text-sm ${textMuted}`}>
-                  Set the Telebirr merchant details so guests can contribute via mobile money.
-                </p>
-              </div>
-
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                if (!user?.managedWedding) return;
-                setTelebirrLoading(true);
-                try {
-                  await api.put(`/weddings/${user.managedWedding}`, { telebirrSettings: telebirr });
-                  setTelebirrSaved(true);
-                  setTimeout(() => setTelebirrSaved(false), 3000);
-                } catch (err) {
-                  console.error('Failed to save Telebirr settings', err);
-                } finally {
-                  setTelebirrLoading(false);
-                }
-              }} className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="space-y-2">
-                    <span className={`text-sm font-bold ${textMuted}`}>Telebirr Phone Number</span>
-                    <input
-                      value={telebirr.phoneNumber}
-                      onChange={(e) => setTelebirr(p => ({ ...p, phoneNumber: e.target.value }))}
-                      placeholder="+2519XXXXXXXX"
-                      className="w-full rounded-2xl border border-[#dcc6a7] bg-white/60 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
-                    />
-                  </label>
-                  <label className="space-y-2">
-                    <span className={`text-sm font-bold ${textMuted}`}>Account Name</span>
-                    <input
-                      value={telebirr.accountName}
-                      onChange={(e) => setTelebirr(p => ({ ...p, accountName: e.target.value }))}
-                      placeholder="e.g. Solomon & Helen"
-                      className="w-full rounded-2xl border border-[#dcc6a7] bg-white/60 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
-                    />
-                  </label>
-                </div>
-                <div className="flex items-center gap-4">
-                  <button
-                    className={`rounded-2xl ${goldGradient} px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-[#8B5A00]/20 transition-all duration-300 hover:brightness-110`}
-                    type="submit"
-                  >
-                    {telebirrLoading ? 'Saving...' : 'Save Telebirr Settings'}
-                  </button>
-                  {telebirrSaved && (
-                    <span className="text-sm font-semibold text-green-600">Saved!</span>
-                  )}
-                </div>
-              </form>
-            </div>
-          )}
         </div>
       </div>
     </div>

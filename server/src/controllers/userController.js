@@ -39,6 +39,7 @@ export const registerUser = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        managedWedding: user.managedWedding || null,
         token: generateToken(user._id),
       });
     }
@@ -65,6 +66,7 @@ export const loginUser = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        managedWedding: user.managedWedding || null,
         token: generateToken(user._id),
       });
     } else {

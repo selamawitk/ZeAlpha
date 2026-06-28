@@ -34,8 +34,10 @@ api.interceptors.response.use(
       window.location.href = '/auth';
     }
 
-    // Preserve the original error so callers can read error.response?.data?.message
-    const msg = error.response?.data?.message || 'An unexpected error occurred';
+    const msg = error.response?.data?.message
+      || (error.code === 'ERR_NETWORK' ? 'Cannot connect to server. Check your internet or the server may be down.'
+      : error.code === 'ECONNABORTED' ? 'Request timed out. Please try again.'
+      : 'An unexpected error occurred');
     error.message = msg;
 
     return Promise.reject(error);
@@ -236,15 +238,6 @@ export const approveGuestGift = async (giftId, status) => {
 };
 
 //
-// TELEBIRR
-//
-
-export const initiateTelebirrPayment = async (giftId, amount, phoneNumber, giftName) => {
-  const { data } = await api.post('/payments/telebirr', { giftId, amount, phoneNumber, giftName });
-  return data;
-};
-
-//
 // DELIVERY TRACKING
 //
 
@@ -268,15 +261,6 @@ export const verifyWedding = async (weddingId, verified = true) => {
 
 export const getWeddingAnalytics = async (weddingId) => {
   const { data } = await api.get(`/weddings/${weddingId}/analytics`);
-  return data;
-};
-
-//
-// TELEBIRR SETTINGS
-//
-
-export const updateTelebirrSettings = async (weddingId, settings) => {
-  const { data } = await api.put(`/weddings/${weddingId}`, { telebirrSettings: settings });
   return data;
 };
 

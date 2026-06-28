@@ -38,11 +38,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.set('trust proxy', 1);
 
-// Enable CORS for frontend — supports multiple origins via comma-separated CLIENT_URL
+// Enable CORS — allow all origins in development, supports custom origins via CLIENT_URL
 const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(s => s.trim());
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*') || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
       callback(new Error(`Origin ${origin} not allowed by CORS`));
@@ -79,7 +79,7 @@ app.use('/api', (req, res, next) => {
 // Stricter rate limit for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 50,
   message: 'Too many login attempts, please try again later.',
 });
 app.use('/api/users/login', authLimiter);

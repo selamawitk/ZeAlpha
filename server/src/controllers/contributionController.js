@@ -9,7 +9,7 @@ import { sendGiftReceipt, sendWeddingFundedAlert } from '../services/emailServic
 import Notification from '../models/Notification.js';
 import VendorOrder from '../models/VendorOrder.js';
 
-const CONTRIBUTION_METHODS = ['stripe', 'bank_transfer', 'telebirr'];
+const CONTRIBUTION_METHODS = ['stripe'];
 
 export const createContribution = async (req, res) => {
   const { giftId, amount, paymentMethod, transactionId, message, isAnonymous, screenshotUrl, guestName, guestPhone } = req.body;
@@ -20,14 +20,6 @@ export const createContribution = async (req, res) => {
 
   if (!CONTRIBUTION_METHODS.includes(paymentMethod)) {
     return res.status(400).json({ message: 'Invalid payment method' });
-  }
-
-  if (paymentMethod === 'bank_transfer' && !screenshotUrl) {
-    return res.status(400).json({ message: 'A payment screenshot is required for manual payments' });
-  }
-
-  if (paymentMethod === 'telebirr' && !transactionId) {
-    return res.status(400).json({ message: 'A Telebirr transaction reference is required' });
   }
 
   const gift = await Gift.findById(giftId).populate('weddingId');
@@ -573,7 +565,7 @@ export const downloadReceipt = async (req, res) => {
     <tr><td>Gift</td><td>${contribution.giftId?.name || 'N/A'}</td></tr>
     <tr><td>Contributor</td><td>${contribution.guestId?.name || 'Guest'}</td></tr>
     <tr><td>Email</td><td>${contribution.guestId?.email || 'N/A'}</td></tr>
-    <tr><td>Payment Method</td><td>${contribution.paymentMethod === 'stripe' ? 'Card (Stripe)' : contribution.paymentMethod === 'telebirr' ? 'Telebirr' : 'Bank Transfer'}</td></tr>
+    <tr><td>Payment Method</td><td>Card (Stripe)</td></tr>
     <tr><td>Status</td><td><span class="status-badge status-${contribution.status}">${contribution.status}</span></td></tr>
   </table>
   <div class="amount">${contribution.amount.toLocaleString()} ETB</div>

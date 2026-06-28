@@ -23,7 +23,7 @@ const contributionSchema = new mongoose.Schema({
   // Payment Logic
   paymentMethod: { 
     type: String, 
-    enum: ['stripe', 'bank_transfer', 'telebirr'], 
+    enum: ['stripe', 'bank_transfer'], 
     required: true 
   },
   screenshotUrl: { type: String }, // For manual payments
