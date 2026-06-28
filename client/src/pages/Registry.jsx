@@ -159,6 +159,18 @@ const Registry = () => {
             <h1 className="text-3xl font-bold text-primary-dark">
               {wedding?.weddingName} Registry
             </h1>
+            {wedding?.weddingCode && (
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary-dark">
+                <span>Wedding Code:</span>
+                <span className="tracking-widest font-black">{wedding.weddingCode}</span>
+                <button
+                  onClick={() => navigator.clipboard.writeText(wedding.weddingCode)}
+                  className="ml-1 text-xs underline hover:text-primary"
+                >
+                  Copy
+                </button>
+              </div>
+            )}
             <p className="mt-3 text-sm text-secondary">
               Shop the curated gift list, contribute without friction, and see live updates as contributions arrive.
             </p>

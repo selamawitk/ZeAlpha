@@ -12,6 +12,9 @@ const weddingSchema = new mongoose.Schema({
   // URL Slug (e.g., "solomon-and-helen-2026")
   slug: { type: String, required: true, unique: true },
   
+  // Unique shareable code (e.g., "AB3X9K2M") for guests to join
+  weddingCode: { type: String, unique: true, sparse: true },
+  
   bannerImage: { type: String },
   description: { type: String }, // Story about the couple
   

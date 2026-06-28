@@ -36,6 +36,7 @@ const FindWedding = () => {
         w.weddingName?.toLowerCase().includes(q) ||
         w.coupleName?.toLowerCase().includes(q) ||
         w.slug?.toLowerCase().includes(q) ||
+        w.weddingCode?.toLowerCase().includes(q) ||
         w.venue?.toLowerCase().includes(q)
     );
     setFilteredWeddings(filtered);
@@ -98,7 +99,7 @@ const FindWedding = () => {
                       {w.coupleName && <span className="flex items-center gap-1"><Heart className="h-3 w-3" />{w.coupleName}</span>}
                       {w.weddingDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(w.weddingDate).toLocaleDateString()}</span>}
                       {w.venue && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{w.venue}</span>}
-                      <span className="flex items-center gap-1"><Users className="h-3 w-3" />Code: {w.slug}</span>
+                      <span className="flex items-center gap-1"><Users className="h-3 w-3" />Code: {w.weddingCode || w.slug}</span>
                     </div>
                   </div>
                   <ArrowRight className="h-5 w-5 text-[#8B5A00] opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />

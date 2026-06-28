@@ -247,8 +247,13 @@ export const getWeddingRegistry = async (req, res) => {
     const registry = {
       _id: wedding._id,
       slug: wedding.slug,
+      weddingCode: wedding.weddingCode,
       coupleId: wedding.couple,
       weddingName: wedding.weddingName,
+      weddingDate: wedding.weddingDate,
+      description: wedding.description,
+      bannerImage: wedding.bannerImage,
+      privacySettings: wedding.privacySettings,
       gifts
     };
 

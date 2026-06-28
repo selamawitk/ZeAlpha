@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import Wedding from '../models/Wedding.js';
 import Gift from '../models/Gift.js';
 import Contribution from '../models/Contribution.js';
@@ -8,6 +9,19 @@ import { emitActivity } from '../services/socketService.js';
 const createSlug = (name, id) => {
   const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   return `${base}-${id.toString().slice(-6)}`;
+};
+
+const generateWeddingCode = async () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (let attempt = 0; attempt < 10; attempt++) {
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars[crypto.randomInt(chars.length)];
+    }
+    const existing = await Wedding.findOne({ weddingCode: code });
+    if (!existing) return code;
+  }
+  return `W${Date.now().toString(36).toUpperCase()}`;
 };
 
 export const createWedding = async (req, res) => {
@@ -27,6 +41,8 @@ export const createWedding = async (req, res) => {
     slug = createSlug(weddingName, req.user._id) + '-' + Date.now().toString(36);
     attempts++;
   }
+  const weddingCode = await generateWeddingCode();
+
   const wedding = await Wedding.create({
     couple: req.user._id,
     weddingName,
@@ -34,7 +50,8 @@ export const createWedding = async (req, res) => {
     description,
     bannerImage,
     payoutSettings,
-    slug
+    slug,
+    weddingCode
   });
 
   const user = await User.findById(req.user._id);
@@ -73,8 +90,8 @@ export const getWeddings = async (req, res) => {
       ]
     };
   }
-  const weddings = await Wedding.find(query).populate('couple', 'name email');
-  res.json(weddings);
+  const weddings = await Wedding.find(query).populate('couple', 'name email').lean();
+  res.json(weddings.map(w => ({ ...w, coupleName: w.couple?.name || '' })));
 };
 
 export const getWeddingBySlug = async (req, res) => {
@@ -176,6 +193,29 @@ export const deleteWedding = async (req, res) => {
 
   await Wedding.deleteOne({ _id: wedding._id });
   res.json({ message: 'Wedding removed' });
+};
+
+export const getWeddingByCode = async (req, res) => {
+  try {
+    const { code } = req.params;
+    if (!code || code.length < 4) {
+      return res.status(400).json({ message: 'Invalid wedding code' });
+    }
+    const wedding = await Wedding.findOne({ weddingCode: code.toUpperCase() })
+      .populate('couple', 'name email')
+      .lean();
+    if (!wedding) {
+      return res.status(404).json({ message: 'Wedding not found with that code' });
+    }
+    if (new Date(wedding.weddingDate) < new Date() && !wedding.conversionSettings?.autoConvert) {
+      // Wedding has passed — still return info but indicate it
+    }
+    const gifts = await Gift.find({ weddingId: wedding._id });
+    wedding.gifts = gifts;
+    res.json({ success: true, registry: wedding });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const getWeddingAnalytics = async (req, res) => {
