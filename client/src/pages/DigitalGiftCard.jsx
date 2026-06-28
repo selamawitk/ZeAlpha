@@ -8,6 +8,7 @@ const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]
 const DigitalGiftCard = () => {
   const { id } = useParams();
   const [gift, setGift] = useState(null);
+  const [wedding, setWedding] = useState(null);
   const [contributions, setContributions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,6 +19,23 @@ const DigitalGiftCard = () => {
         const { data: contribs } = await api.get('/contributions', { params: { giftId: id } });
         setGift(giftData);
         setContributions(Array.isArray(contribs) ? contribs : []);
+
+        if (giftData.weddingId) {
+          try {
+            const { data: weddingData } = await api.get(`/weddings/slug/${encodeURIComponent(giftData.weddingId.toLowerCase())}`);
+            setWedding(weddingData);
+          } catch {
+            try {
+              const { data: weddingData } = await api.get(`/weddings/code/${encodeURIComponent(giftData.weddingId.toUpperCase())}`);
+              setWedding(weddingData);
+            } catch {
+              try {
+                const { data: weddingData } = await api.get(`/weddings/${giftData.weddingId}`);
+                setWedding(weddingData);
+              } catch {}
+            }
+          }
+        }
       } catch {
         setGift(null);
       } finally {
@@ -107,10 +125,10 @@ const DigitalGiftCard = () => {
                 <Gift className="h-4 w-4" />
                 {gift.type === 'individual' ? 'Unique Gift' : 'Shareable Gift'}
               </span>
-              {gift.weddingId?.weddingDate && (
+              {wedding?.weddingDate && (
                 <span className="inline-flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  {new Date(gift.weddingId.weddingDate).toLocaleDateString()}
+                  {new Date(wedding.weddingDate).toLocaleDateString()}
                 </span>
               )}
             </div>

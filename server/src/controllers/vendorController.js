@@ -6,6 +6,7 @@ import Wedding from '../models/Wedding.js';
 import Notification from '../models/Notification.js';
 import { emitActivity, emitNotification, emitVendorOrderUpdate } from '../services/socketService.js';
 import { sendOrderStatusEmail } from '../services/emailService.js';
+import { resolveWedding } from '../utils/weddingResolver.js';
 
 // ── VENDOR CRUD ──
 
@@ -113,13 +114,13 @@ export const createVendorOrder = async (req, res) => {
   const gift = await Gift.findById(giftId);
   if (!gift) return res.status(404).json({ message: 'Gift not found' });
 
-  const wedding = await Wedding.findById(gift.weddingId);
+  const wedding = await resolveWedding(gift.weddingId);
   if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
 
   const product = productId ? await VendorProduct.findById(productId) : null;
 
   const order = await VendorOrder.create({
-    wedding: gift.weddingId,
+    wedding: wedding._id,
     gift: giftId,
     vendor: vendorId,
     product: productId || undefined,
