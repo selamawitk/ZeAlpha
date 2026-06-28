@@ -1,10 +1,9 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-import { upload } from '../utils/imageUpload.js';
+import { upload, useCloudinary } from '../utils/imageUpload.js';
 
 const router = express.Router();
 
-// Upload image endpoint (authenticated)
 router.post('/image', protect, (req, res, next) => {
   upload.single('image')(req, res, (err) => {
     if (err) {
@@ -16,11 +15,16 @@ router.post('/image', protect, (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
-    const filename = req.file.filename;
-    const proto = req.headers['x-forwarded-proto'] || req.protocol;
-    const host = req.headers['x-forwarded-host'] || req.get('host');
-    const baseUrl = `${proto}://${host}`;
-    res.json({ url: `${baseUrl}/uploads/${filename}` });
+
+    if (useCloudinary) {
+      res.json({ url: req.file.path });
+    } else {
+      const filename = req.file.filename;
+      const proto = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['x-forwarded-host'] || req.get('host');
+      const baseUrl = `${proto}://${host}`;
+      res.json({ url: `${baseUrl}/uploads/${filename}` });
+    }
   });
 });
 
