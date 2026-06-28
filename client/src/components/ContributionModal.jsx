@@ -24,7 +24,7 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
       giftId: gift._id,
       giftName: gift.name,
       amount: Number(amount),
-      currency: 'etb',
+      currency: 'usd',
     });
     window.location.href = data.url;
   };

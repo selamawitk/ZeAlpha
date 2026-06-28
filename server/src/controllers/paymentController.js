@@ -2,7 +2,7 @@ import Payment from '../models/Payment.js';
 import { createPaymentIntent, createCheckoutSession } from '../services/stripeService.js';
 
 export const createStripeIntent = async (req, res) => {
-  const { giftId, amount, currency = 'etb', guestId, contributionId } = req.body;
+  const { giftId, amount, currency = 'usd', guestId, contributionId } = req.body;
   if (!giftId || !amount) {
     return res.status(400).json({ message: 'giftId and amount are required' });
   }
@@ -17,7 +17,7 @@ export const createStripeIntent = async (req, res) => {
 };
 
 export const createStripeCheckout = async (req, res) => {
-  const { giftId, giftName, amount, currency = 'etb' } = req.body;
+  const { giftId, giftName, amount, currency = 'usd' } = req.body;
   if (!giftId || !amount) {
     return res.status(400).json({ message: 'giftId and amount are required' });
   }

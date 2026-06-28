@@ -1,6 +1,7 @@
 import stripe from '../config/stripe.js';
 
 export const createPaymentIntent = async ({ amount, currency = 'usd', metadata = {} }) => {
+  // Note: Stripe does not support ETB. USD is the stable default.
   if (!stripe) {
     throw new Error('Stripe not configured');
   }
@@ -13,7 +14,7 @@ export const createPaymentIntent = async ({ amount, currency = 'usd', metadata =
   return paymentIntent;
 };
 
-export const createCheckoutSession = async ({ amount, currency = 'etb', successUrl, cancelUrl, metadata = {} }) => {
+export const createCheckoutSession = async ({ amount, currency = 'usd', successUrl, cancelUrl, metadata = {} }) => {
   if (!stripe) {
     throw new Error('Stripe not configured');
   }
