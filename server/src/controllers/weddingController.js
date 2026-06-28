@@ -218,6 +218,20 @@ export const getWeddingByCode = async (req, res) => {
   }
 };
 
+export const verifyWedding = async (req, res) => {
+  try {
+    const wedding = await Wedding.findById(req.params.id);
+    if (!wedding) return res.status(404).json({ message: 'Wedding not found' });
+
+    wedding.isVerifiedWedding = req.body.verified !== false;
+    await wedding.save();
+
+    res.json({ message: `Wedding ${wedding.isVerifiedWedding ? 'verified' : 'unverified'}`, wedding });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getWeddingAnalytics = async (req, res) => {
   const wedding = await Wedding.findById(req.params.id).populate('couple', 'name email');
   if (!wedding) return res.status(404).json({ message: 'Wedding not found' });

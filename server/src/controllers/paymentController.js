@@ -103,3 +103,36 @@ export const updatePaymentStatus = async (req, res) => {
   await payment.save();
   res.json(payment);
 };
+
+export const createTelebirrPayment = async (req, res) => {
+  try {
+    const { giftId, amount, phoneNumber, giftName } = req.body;
+    if (!giftId || !amount || !phoneNumber) {
+      return res.status(400).json({ message: 'giftId, amount, and phoneNumber are required' });
+    }
+
+    const Gift = (await import('../models/Gift.js')).default;
+    const gift = await Gift.findById(giftId).populate('weddingId');
+    if (!gift) return res.status(404).json({ message: 'Gift not found' });
+    if (gift.status !== 'open') return res.status(400).json({ message: 'Gift is not open for contributions' });
+
+    const Wedding = (await import('../models/Wedding.js')).default;
+    const wedding = await Wedding.findById(gift.weddingId._id || gift.weddingId);
+
+    res.json({
+      success: true,
+      message: 'Telebirr payment initiated',
+      telebirrInfo: {
+        merchantName: wedding?.weddingName || 'ZeAlpha Wedding',
+        merchantPhone: wedding?.telebirrSettings?.phoneNumber || process.env.TELEBIRR_MERCHANT_PHONE || '+251900000000',
+        accountName: wedding?.telebirrSettings?.accountName || wedding?.couple?.name || 'Wedding Couple',
+        amount: Number(amount),
+        giftId,
+        giftName: giftName || gift.name,
+        reference: `TEL-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

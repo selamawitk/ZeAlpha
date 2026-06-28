@@ -18,9 +18,18 @@ const weddingSchema = new mongoose.Schema({
   bannerImage: { type: String },
   description: { type: String }, // Story about the couple
   
+  // Wedding Verification Badge
+  isVerifiedWedding: { type: Boolean, default: false },
+
+  // Telebirr payment details
+  telebirrSettings: {
+    phoneNumber: { type: String, default: '' },
+    accountName: { type: String, default: '' }
+  },
+
   // Payout Configuration
   payoutSettings: {
-    preferredMethod: { type: String, enum: ['bank_transfer'], default: 'bank_transfer' },
+    preferredMethod: { type: String, enum: ['bank_transfer', 'telebirr'], default: 'bank_transfer' },
     accountHolderName: { type: String, default: '' },
     bankName: { type: String, default: '' },
     accountNumber: { type: String, default: '' },

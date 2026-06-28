@@ -58,7 +58,18 @@ const giftSchema = new mongoose.Schema({
   digitalCardData: { type: String },
   
   category: { type: String },
-  priority: { type: Number, default: 1 }
+  priority: { type: Number, default: 1 },
+
+  deliveryAddress: { type: String },
+  deliveryTrackingNumber: { type: String },
+  deliveryStatus: {
+    type: String,
+    enum: ['not_shipped', 'processing', 'shipped', 'in_transit', 'delivered', 'cancelled'],
+    default: 'not_shipped'
+  },
+  deliveryProvider: { type: String },
+  deliveryEstimatedDate: { type: Date },
+  deliveryNotes: { type: String }
 }, { timestamps: true });
 
 giftSchema.pre('save', function(next) {

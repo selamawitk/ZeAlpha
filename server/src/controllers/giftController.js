@@ -412,6 +412,7 @@ export const getWeddingRegistry = async (req, res) => {
       description: wedding.description,
       bannerImage: wedding.bannerImage,
       privacySettings: wedding.privacySettings,
+      isVerifiedWedding: wedding.isVerifiedWedding || false,
       gifts
     };
 
@@ -464,6 +465,58 @@ export const getGiftRecommendations = async (req, res) => {
     }));
 
     res.json({ suggestions });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateGiftDelivery = async (req, res) => {
+  try {
+    const { deliveryStatus, deliveryTrackingNumber, deliveryProvider, deliveryEstimatedDate, deliveryAddress, deliveryNotes } = req.body;
+
+    const gift = await Gift.findById(req.params.id);
+    if (!gift) return res.status(404).json({ message: 'Gift not found' });
+
+    if (deliveryStatus) gift.deliveryStatus = deliveryStatus;
+    if (deliveryTrackingNumber) gift.deliveryTrackingNumber = deliveryTrackingNumber;
+    if (deliveryProvider) gift.deliveryProvider = deliveryProvider;
+    if (deliveryEstimatedDate) gift.deliveryEstimatedDate = deliveryEstimatedDate;
+    if (deliveryAddress) gift.deliveryAddress = deliveryAddress;
+    if (deliveryNotes) gift.deliveryNotes = deliveryNotes;
+
+    await gift.save();
+
+    const { emitGiftUpdate, emitNotification, emitActivity } = await import('../services/socketService.js');
+    emitGiftUpdate(gift);
+
+    if (deliveryStatus) {
+      const statusLabels = { not_shipped: 'Not shipped', processing: 'Processing', shipped: 'Shipped', in_transit: 'In transit', delivered: 'Delivered', cancelled: 'Cancelled' };
+      await (await import('../models/Notification.js')).default.create({
+        recipient: gift.weddingId?.couple || req.user?._id,
+        weddingId: gift.weddingId,
+        type: 'order_shipped',
+        title: `Delivery update: ${gift.name}`,
+        message: `Delivery status for "${gift.name}" is now: ${statusLabels[deliveryStatus] || deliveryStatus}`,
+        link: '/dashboard/fulfillment',
+      });
+      emitNotification({
+        recipient: gift.weddingId?.couple,
+        weddingId: gift.weddingId,
+        type: 'order_shipped',
+        title: `Delivery update: ${gift.name}`,
+        message: `Delivery status for "${gift.name}" is now: ${statusLabels[deliveryStatus] || deliveryStatus}`,
+        link: '/dashboard/fulfillment',
+      });
+      emitActivity({
+        weddingId: String(gift.weddingId),
+        title: `Delivery update: ${gift.name}`,
+        message: `"${gift.name}" delivery status changed to ${statusLabels[deliveryStatus] || deliveryStatus}`,
+        type: 'order_shipped',
+        timestamp: new Date(),
+      });
+    }
+
+    res.json(gift);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

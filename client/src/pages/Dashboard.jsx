@@ -3,8 +3,10 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Calendar, AlertTriangle, PartyPopper, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useSocket } from '../context/SocketContext.jsx';
 import api, { updateGiftSettlement } from '../api/api.js';
 import AiPlanner from '../components/AiPlanner.jsx';
+import CelebrationModal from '../components/CelebrationModal.jsx';
 
 const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
 const glassCard = 'bg-white/60 backdrop-blur-xl border border-[#D4C39B] shadow-[0_4px_16px_rgba(0,0,0,0.05)] rounded-[28px]';
@@ -24,12 +26,14 @@ const Spinner = () => (
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
+  const { socket } = useSocket();
   const [wedding, setWedding] = useState(null);
   const [gifts, setGifts] = useState([]);
   const [loadingWedding, setLoadingWedding] = useState(true);
   const [loadingGifts, setLoadingGifts] = useState(true);
   const [settlementLoading, setSettlementLoading] = useState({});
   const [showAiPlanner, setShowAiPlanner] = useState(false);
+  const [celebratedGift, setCelebratedGift] = useState(null);
 
   useEffect(() => {
     if (user?.managedWedding) {
@@ -61,6 +65,21 @@ const Dashboard = () => {
       setLoadingGifts(false);
     }
   }, [user, loading]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleGiftUpdate = (updatedGift) => {
+      setGifts(prev => {
+        const existing = prev.find(g => g._id === updatedGift._id);
+        if (existing && existing.status !== 'fullyFunded' && updatedGift.status === 'fullyFunded') {
+          setCelebratedGift(updatedGift);
+        }
+        return prev.map(g => g._id === updatedGift._id ? { ...g, ...updatedGift } : g);
+      });
+    };
+    socket.on('gift:update', handleGiftUpdate);
+    return () => socket.off('gift:update', handleGiftUpdate);
+  }, [socket]);
 
   const handleSettlement = async (giftId, deliveryOptions) => {
     setSettlementLoading(prev => ({ ...prev, [giftId]: true }));
@@ -277,6 +296,12 @@ const Dashboard = () => {
             onClose={() => setShowAiPlanner(false)}
           />
         )}
+
+        <CelebrationModal
+          gift={celebratedGift}
+          isOpen={Boolean(celebratedGift)}
+          onClose={() => setCelebratedGift(null)}
+        />
 
         <footer className={`mt-3 text-center text-[10px] ${textMuted} font-bold`}>
           © 2026 ZeAlpha

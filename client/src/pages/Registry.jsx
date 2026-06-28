@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, BadgeCheck } from 'lucide-react';
 import { useSocket } from '../context/SocketContext.jsx';
 import api, { fetchBlessings, addBlessing } from '../api/api.js';
 import GiftCard from '../components/GiftCard.jsx';
@@ -8,6 +8,8 @@ import LiveActivityFeed from '../components/LiveActivityFeed.jsx';
 import ContributionModal from '../components/ContributionModal.jsx';
 import AiSuggestion from '../components/AiSuggestion.jsx';
 import GuestGiftForm from '../components/GuestGiftForm.jsx';
+import Leaderboard from '../components/Leaderboard.jsx';
+import CelebrationModal from '../components/CelebrationModal.jsx';
 
 const Registry = () => {
   const { slug } = useParams();
@@ -20,6 +22,7 @@ const Registry = () => {
   const [showAiSuggestion, setShowAiSuggestion] = useState(false);
   const [showGuestGiftForm, setShowGuestGiftForm] = useState(false);
   const [blessings, setBlessings] = useState([]);
+  const [celebratedGift, setCelebratedGift] = useState(null);
   const [blessingForm, setBlessingForm] = useState({ guestName: '', message: '' });
   const [blessingSubmitted, setBlessingSubmitted] = useState(false);
 
@@ -77,11 +80,15 @@ const Registry = () => {
     if (!socket) return;
 
     const handleGiftUpdate = (updatedGift) => {
-      setGifts((currentGifts) =>
-        currentGifts.map((gift) =>
+      setGifts((currentGifts) => {
+        const existing = currentGifts.find(g => g._id === updatedGift._id);
+        if (existing && existing.status !== 'fullyFunded' && updatedGift.status === 'fullyFunded') {
+          setCelebratedGift(updatedGift);
+        }
+        return currentGifts.map((gift) =>
           gift._id === updatedGift._id ? { ...gift, ...updatedGift } : gift
-        )
-      );
+        );
+      });
     };
 
     socket.on('gift:update', handleGiftUpdate);
@@ -180,8 +187,14 @@ const Registry = () => {
       <div className="grid gap-8 xl:grid-cols-[2fr_1fr]">
         <section>
           <div className="mb-8 rounded-[2rem] bg-white p-8 shadow-premium">
-            <h1 className="text-3xl font-bold text-primary-dark">
+            <h1 className="text-3xl font-bold text-primary-dark flex items-center gap-2">
               {wedding?.weddingName} Registry
+              {wedding?.isVerifiedWedding && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-200">
+                  <BadgeCheck className="h-3.5 w-3.5" />
+                  Verified
+                </span>
+              )}
             </h1>
             {wedding?.weddingCode && (
               <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary-dark">
@@ -233,6 +246,7 @@ const Registry = () => {
               + Create Custom Gift
             </button>
           </div>
+          <Leaderboard weddingId={wedding?._id} />
           <LiveActivityFeed weddingId={wedding?._id} />
 
           <div className="rounded-[2rem] bg-white p-6 shadow-premium">
@@ -350,6 +364,12 @@ const Registry = () => {
         gift={selectedGift}
         isOpen={Boolean(selectedGift)}
         onClose={closeModal}
+      />
+
+      <CelebrationModal
+        gift={celebratedGift}
+        isOpen={Boolean(celebratedGift)}
+        onClose={() => setCelebratedGift(null)}
       />
     </div>
   );

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import AnalyticsCard from '../components/AnalyticsCard.jsx';
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Package, Shield, CheckCircle } from 'lucide-react';
+import { Package, Shield, CheckCircle, BadgeCheck } from 'lucide-react';
 
 import {
   fetchPendingContributions,
@@ -23,6 +23,7 @@ const AdminOverview = () => {
   });
 
   const [loading, setLoading] = useState(true);
+  const [allWeddings, setAllWeddings] = useState([]);
   const [vendorAnalytics, setVendorAnalytics] = useState({
     totalOrders: 0, deliveredOrders: 0, pendingOrders: 0,
     cancelledOrders: 0, fulfillmentRate: 0, mostUsedVendors: [],
@@ -63,6 +64,9 @@ const AdminOverview = () => {
         ]);
 
         if (vendorData) setVendorAnalytics(vendorData);
+
+        const weddingsRes = await api.get('/weddings');
+        setAllWeddings(Array.isArray(weddingsRes.data) ? weddingsRes.data : []);
 
         // Real contribution stats
         const totalRaised = allContributions
@@ -471,6 +475,52 @@ const AdminOverview = () => {
                   ))}
               </div>
             )}
+          </div>
+        </section>
+
+        {/* Wedding Verification */}
+        <section className="mt-6">
+          <div className={`rounded-[28px] ${cardElevated} p-6`}>
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="h-5 w-5 text-[#B8860B]" />
+              <h2 className={`text-2xl font-black ${textPrimary}`}>Wedding Verification</h2>
+            </div>
+            <p className={`text-sm ${textMuted} mb-4`}>Verify wedding registries to show the verified badge.</p>
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {allWeddings.length === 0 ? (
+                <p className="text-sm text-[#6f6257]">No weddings found.</p>
+              ) : allWeddings.map(w => (
+                <div key={w._id} className="flex items-center justify-between rounded-2xl border border-[#D4C39B] bg-white/50 p-4">
+                  <div className="flex items-center gap-2">
+                    {w.isVerifiedWedding && <BadgeCheck className="h-5 w-5 text-blue-500" />}
+                    <div>
+                      <p className={`text-sm font-bold ${textPrimary}`}>{w.weddingName}</p>
+                      <p className={`text-xs ${textMuted}`}>
+                        {(w.coupleName || w.couple?.name || 'Couple')} • {w.isVerifiedWedding ? 'Verified' : 'Unverified'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const { verifyWedding } = await import('../api/api.js');
+                        await verifyWedding(w._id, !w.isVerifiedWedding);
+                        setAllWeddings(prev => prev.map(w2 => w2._id === w._id ? { ...w2, isVerifiedWedding: !w2.isVerifiedWedding } : w2));
+                      } catch (err) {
+                        alert('Failed to update verification status');
+                      }
+                    }}
+                    className={`rounded-xl px-4 py-2 text-xs font-black transition-all ${
+                      w.isVerifiedWedding
+                        ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
+                        : `${goldGradient} text-white shadow-md shadow-[#8B5A00]/20`
+                    }`}
+                  >
+                    {w.isVerifiedWedding ? 'Remove Badge' : 'Verify'}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </motion.div>

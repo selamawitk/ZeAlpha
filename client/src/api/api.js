@@ -235,4 +235,49 @@ export const approveGuestGift = async (giftId, status) => {
   return data;
 };
 
+//
+// TELEBIRR
+//
+
+export const initiateTelebirrPayment = async (giftId, amount, phoneNumber, giftName) => {
+  const { data } = await api.post('/payments/telebirr', { giftId, amount, phoneNumber, giftName });
+  return data;
+};
+
+//
+// DELIVERY TRACKING
+//
+
+export const updateGiftDelivery = async (giftId, deliveryData) => {
+  const { data } = await api.put(`/gifts/${giftId}/delivery`, deliveryData);
+  return data;
+};
+
+//
+// WEDDING VERIFICATION
+//
+
+export const verifyWedding = async (weddingId, verified = true) => {
+  const { data } = await api.put(`/weddings/${weddingId}/verify`, { verified });
+  return data;
+};
+
+//
+// LEADERBOARD
+//
+
+export const getWeddingAnalytics = async (weddingId) => {
+  const { data } = await api.get(`/weddings/${weddingId}/analytics`);
+  return data;
+};
+
+//
+// TELEBIRR SETTINGS
+//
+
+export const updateTelebirrSettings = async (weddingId, settings) => {
+  const { data } = await api.put(`/weddings/${weddingId}`, { telebirrSettings: settings });
+  return data;
+};
+
 export default api;

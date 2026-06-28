@@ -4,6 +4,7 @@ import api from '../api/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import { Package, Truck, CheckCircle, XCircle, Clock, AlertCircle, ShoppingBag, TrendingUp, ListOrdered } from 'lucide-react';
+import DeliveryTracker from '../components/DeliveryTracker.jsx';
 
 const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
 const glassCard = 'bg-white/60 backdrop-blur-xl border border-[#D4C39B] shadow-[0_4px_16px_rgba(0,0,0,0.05)] rounded-[28px]';
@@ -47,6 +48,7 @@ const DashboardFulfillment = () => {
   const { socket } = useSocket();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [giftDeliveryList, setGiftDeliveryList] = useState([]);
 
   const fetchOrders = useCallback(async () => {
     if (!user) return;
@@ -63,10 +65,37 @@ const DashboardFulfillment = () => {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
+  // Fetch fully funded gifts for delivery tracking
+  useEffect(() => {
+    if (!user?.managedWedding) return;
+    const fetchFundedGifts = async () => {
+      try {
+        const { data } = await api.get(`/gifts/wedding/${user.managedWedding}`);
+        const funded = (Array.isArray(data) ? data : []).filter(g => g.status === 'fullyFunded');
+        setGiftDeliveryList(funded);
+      } catch {}
+    };
+    fetchFundedGifts();
+  }, [user]);
+
   useEffect(() => {
     if (!socket) return;
     socket.on('vendorOrder:update', fetchOrders);
-    return () => socket.off('vendorOrder:update', fetchOrders);
+    const handleGiftUpdate = (updatedGift) => {
+      if (updatedGift.status === 'fullyFunded') {
+        setGiftDeliveryList(prev => {
+          if (prev.find(g => g._id === updatedGift._id)) {
+            return prev.map(g => g._id === updatedGift._id ? { ...g, ...updatedGift } : g);
+          }
+          return [...prev, updatedGift];
+        });
+      }
+    };
+    socket.on('gift:update', handleGiftUpdate);
+    return () => {
+      socket.off('vendorOrder:update', fetchOrders);
+      socket.off('gift:update', handleGiftUpdate);
+    };
   }, [socket, fetchOrders]);
 
   const stats = useMemo(() => {
@@ -300,6 +329,25 @@ const DashboardFulfillment = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Delivery Tracking for Non-Vendor Gifts */}
+        {giftDeliveryList.length > 0 && (
+          <motion.div variants={itemVariants} className="mt-8">
+            <h2 className={`text-2xl font-black ${textPrimary} mb-4`}>Delivery Tracking</h2>
+            <p className={`text-sm ${textMuted} mb-4`}>Track delivery of your fully funded gifts.</p>
+            <div className="space-y-3">
+              {giftDeliveryList.map(g => (
+                <DeliveryTracker
+                  key={g._id}
+                  gift={g}
+                  onUpdate={(updated) => {
+                    setGiftDeliveryList(prev => prev.map(g2 => g2._id === updated._id ? { ...g2, ...updated } : g2));
+                  }}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         <footer className={`mt-10 text-center text-[10px] ${textMuted} font-bold pb-6`}>© 2026 ZeAlpha</footer>
       </div>
