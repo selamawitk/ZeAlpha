@@ -11,7 +11,6 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   if (!isOpen || !gift) return null;
 
