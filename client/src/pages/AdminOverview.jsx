@@ -285,12 +285,17 @@ const AdminOverview = () => {
         </section>
 
         {/* Vendor Analytics */}
-        <section className={`rounded-[28px] ${glassCard} p-5`}>
+        <section className={`rounded-[28px] ${glassCard} p-5 relative overflow-hidden`}>
+          <div className="absolute top-3 right-3 z-10">
+            <span className="rounded-full bg-[#8B5A00]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8B5A00] border border-[#8B5A00]/20">
+              Coming Soon
+            </span>
+          </div>
           <div className="flex items-center gap-4 mb-5">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${goldGradient} text-white shadow-md`}><Package className="h-6 w-6" /></div>
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${goldGradient} text-white shadow-md opacity-60`}><Package className="h-6 w-6" /></div>
             <div>
               <h2 className={`text-xl font-black ${textPrimary}`}>Fulfillment Analytics</h2>
-              <p className={`text-sm ${textMuted}`}>Real-time vendor order metrics</p>
+              <p className={`text-sm ${textMuted}`}>Vendor order metrics — coming soon</p>
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
