@@ -263,6 +263,18 @@ export const handleStripeWebhook = async (req, res) => {
             });
           }
 
+          // Notify contributor when their payment succeeds (if logged in)
+          if (guestId && guestId !== 'guest') {
+            await Notification.create({
+              recipient: guestId,
+              weddingId: gift.weddingId,
+              type: 'contribution',
+              title: 'Payment Successful',
+              message: `Your contribution of ${amount} ETB to ${giftName || gift.name} was successful.`,
+              link: '/guest'
+            });
+          }
+
           if (willComplete) {
             const digitalCardData = createDigitalCard(
               updatedGift.toObject(),
