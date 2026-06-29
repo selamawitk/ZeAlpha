@@ -219,6 +219,22 @@ export const handleStripeWebhook = async (req, res) => {
             await wedding.save();
           }
 
+          // Send email receipts
+          try {
+            const guestEmail = session.customer_details?.email || session.customer_email;
+            if (guestEmail) {
+              await sendGiftReceipt(guestEmail, contributorEntry.name, amount, updatedGift.name, updatedGift.digitalCardUrl);
+            }
+            if (willComplete && coupleId) {
+              const couple = await User.findById(coupleId);
+              if (couple?.email) {
+                await sendWeddingFundedAlert(couple.email, updatedGift.name, updatedGift.totalPrice);
+              }
+            }
+          } catch (err) {
+            console.error('Checkout email error:', err);
+          }
+
           // Surge detection (reuse updatedGift from atomic update above)
           if (updatedGift && updatedGift.currentCollected >= updatedGift.totalPrice * 0.8) {
             const { emitGiftSurge } = await import('../services/socketService.js');
