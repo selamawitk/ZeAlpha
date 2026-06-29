@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
-import api from '../api/api.js';
+import api, { uploadImage } from '../api/api.js';
 
 const DashboardSettings = () => {
   const { user } = useAuth();
@@ -12,6 +12,9 @@ const DashboardSettings = () => {
     bannerImage: '',
   });
 
+  const [bannerFile, setBannerFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -43,17 +46,35 @@ const DashboardSettings = () => {
     }
   }, [saved]);
 
+  const handleBannerChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+  };
+
   const handleSave = async (event) => {
     event.preventDefault();
     if (!user?.managedWedding) return;
     setLoading(true);
     try {
+      let bannerImageUrl = profile.bannerImage;
+      if (bannerFile) {
+        setUploadingBanner(true);
+        const { url } = await uploadImage(bannerFile);
+        bannerImageUrl = url;
+        setUploadingBanner(false);
+      }
+
       await api.put(`/weddings/${user.managedWedding}`, {
         weddingName: profile.weddingName,
         weddingDate: profile.weddingDate,
         description: profile.description,
-        bannerImage: profile.bannerImage,
+        bannerImage: bannerImageUrl,
       });
+      setProfile(prev => ({ ...prev, bannerImage: bannerImageUrl }));
+      setBannerFile(null);
+      setBannerPreview(null);
       setSaved(true);
     } catch (err) {
       console.error('Failed to save wedding profile', err);
@@ -177,6 +198,28 @@ const DashboardSettings = () => {
                   rows={3}
                   className="w-full rounded-2xl border border-[#dcc6a7] bg-white/60 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
                 />
+              </label>
+
+              <label className="space-y-2">
+                <span
+                  className={`text-sm font-bold ${textMuted}`}
+                >
+                  Banner Image
+                </span>
+
+                <div className="flex flex-col gap-3">
+                  {(bannerPreview || profile.bannerImage) && (
+                    <img
+                      src={bannerPreview || profile.bannerImage}
+                      alt="Banner preview"
+                      className="h-32 w-full rounded-2xl object-cover border border-[#dcc6a7]"
+                    />
+                  )}
+                  <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[#dcc6a7] bg-white/60 px-4 py-3 text-sm text-[#6f6257] transition-all hover:bg-white/80">
+                    <span>{uploadingBanner ? 'Uploading...' : bannerPreview ? 'Change Image' : 'Upload Banner Image'}</span>
+                    <input type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
+                  </label>
+                </div>
               </label>
             </div>
 
