@@ -10,7 +10,7 @@ import Notification from '../models/Notification.js';
 import VendorOrder from '../models/VendorOrder.js';
 import { resolveWedding } from '../utils/weddingResolver.js';
 
-const CONTRIBUTION_METHODS = ['stripe'];
+const CONTRIBUTION_METHODS = ['stripe', 'bank_transfer'];
 
 export const createContribution = async (req, res) => {
   const { giftId, amount, paymentMethod, transactionId, message, isAnonymous, screenshotUrl, guestName, guestPhone } = req.body;
@@ -316,7 +316,11 @@ export const updateContributionStatus = async (req, res) => {
   await contribution.save();
 
   if (status === 'completed' && oldStatus !== 'completed') {
-    const updatedGift = await Gift.findById(contribution.giftId._id);
+    const updatedGift = await Gift.findByIdAndUpdate(
+      contribution.giftId._id,
+      { $inc: { currentCollected: contribution.amount } },
+      { new: true }
+    );
     if (!updatedGift) return res.status(404).json({ message: 'Gift not found' });
     const weddingRes2 = await resolveWedding(updatedGift.weddingId);
 
