@@ -48,8 +48,8 @@ const AdminLayout = () => {
   const navItems = [
     { to: "/admin", label: "Global Metrics", icon: <BarChart3 size={18} /> },
     { to: "/admin/verify-payments", label: "Payment Verification", icon: <ShieldCheck size={18} />, badge: pendingCount },
-    { to: "/admin/orders", label: "Vendor Fulfillment", icon: <Truck size={18} /> },
-    { to: "/admin/vendors", label: "Vendors", icon: <Store size={18} /> },
+    { to: "/admin/orders", label: "Vendor Fulfillment", icon: <Truck size={18} />, comingSoon: true },
+    { to: "/admin/vendors", label: "Vendors", icon: <Store size={18} />, comingSoon: true },
     { to: "/admin/users", label: "Users", icon: <Users size={18} /> }
   ];
 
@@ -111,11 +111,18 @@ const AdminLayout = () => {
                 {item.icon}
                 {collapsed ? '' : item.label}
               </span>
-              {!collapsed && item.badge > 0 && (
-                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#8B5A00] px-1.5 text-[10px] font-black text-white">
-                  {item.badge}
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {!collapsed && item.comingSoon && (
+                  <span className="rounded-full bg-[#8B5A00]/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#8B5A00] border border-[#8B5A00]/20">
+                    Soon
+                  </span>
+                )}
+                {!collapsed && item.badge > 0 && (
+                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#8B5A00] px-1.5 text-[10px] font-black text-white">
+                    {item.badge}
+                  </span>
+                )}
+              </div>
             </NavLink>
           </motion.div>
         ))}
