@@ -95,6 +95,7 @@ const DashboardLayout = () => {
             <NavLink to="/dashboard/fulfillment" className={navItem} onClick={() => setMobileOpen(false)}>
               <Truck size={18} className="shrink-0" />
               {!collapsed && <span>Fulfillment</span>}
+              {!collapsed && <span className="ml-auto rounded-full bg-[#8B5A00]/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#8B5A00] border border-[#8B5A00]/20">Soon</span>}
             </NavLink>
 
             <NavLink to="/dashboard/settings" className={navItem} onClick={() => setMobileOpen(false)}>
