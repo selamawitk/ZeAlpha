@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import api from '../api/api.js';
+import api, { uploadImage } from '../api/api.js';
 import bannerA from '../assets/images/auth wedding page.png';
 import bannerB from '../assets/images/wedding.png';
 
@@ -19,6 +19,9 @@ const WeddingSetup = () => {
     bannerImage: imageOptions[0].value,
     description: ''
   });
+  const [customBannerFile, setCustomBannerFile] = useState(null);
+  const [customBannerPreview, setCustomBannerPreview] = useState(null);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -37,13 +40,29 @@ const WeddingSetup = () => {
     setForm(prev => ({ ...prev, bannerImage: e.target.value }));
   };
 
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setCustomBannerFile(file);
+    setCustomBannerPreview(URL.createObjectURL(file));
+    setForm(prev => ({ ...prev, bannerImage: 'custom' }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const bannerImageUrl = imageOptions.find((option) => option.value === form.bannerImage)?.src || bannerA;
+      let bannerImageUrl;
+      if (form.bannerImage === 'custom' && customBannerFile) {
+        setUploadingBanner(true);
+        const { url } = await uploadImage(customBannerFile);
+        bannerImageUrl = url;
+        setUploadingBanner(false);
+      } else {
+        bannerImageUrl = imageOptions.find((option) => option.value === form.bannerImage)?.src || bannerA;
+      }
 
       const weddingData = {
         weddingName: form.weddingName,
@@ -93,7 +112,7 @@ const WeddingSetup = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-secondary mb-2">Banner Image</label>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               {imageOptions.map((option) => (
                 <label key={option.value} className="cursor-pointer rounded-3xl border border-gray-200 p-4 transition hover:border-primary">
                   <input
@@ -108,6 +127,25 @@ const WeddingSetup = () => {
                   <img src={option.src} alt={option.label} className="mt-3 h-32 w-full rounded-2xl object-cover" />
                 </label>
               ))}
+              <label className="cursor-pointer rounded-3xl border border-gray-200 p-4 transition hover:border-primary">
+                <input
+                  type="radio"
+                  name="bannerImage"
+                  value="custom"
+                  checked={form.bannerImage === 'custom'}
+                  onChange={handleImageChange}
+                  className="mr-2"
+                />
+                <span className="font-medium text-secondary">Custom Image</span>
+                {customBannerPreview ? (
+                  <img src={customBannerPreview} alt="Custom" className="mt-3 h-32 w-full rounded-2xl object-cover" />
+                ) : (
+                  <div className="mt-3 h-32 w-full rounded-2xl bg-gray-100 flex items-center justify-center text-sm text-gray-400">
+                    + Upload your own
+                  </div>
+                )}
+                <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
+              </label>
             </div>
           </div>
           <div>
