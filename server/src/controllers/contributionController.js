@@ -199,6 +199,20 @@ export const createContribution = async (req, res) => {
     link: `/dashboard`
   });
 
+  // Notify contributor when their payment succeeds (if logged in)
+  if (guestUserId) {
+    const contributorNotify = {
+      recipient: guestUserId,
+      weddingId: gift.weddingId,
+      type: 'contribution',
+      title: 'Payment Successful',
+      message: `Your contribution of ${amount} ETB to ${updatedGift.name} was successful.`,
+      link: `/w/${weddingForCard?.slug || ''}`,
+    };
+    await Notification.create(contributorNotify);
+    emitNotification(contributorNotify);
+  }
+
   // Gift completion notification
   if (willCompleteGift) {
     const completionNotify = {
@@ -366,6 +380,20 @@ export const updateContributionStatus = async (req, res) => {
         await Notification.create(contributorNotify);
         emitNotification(contributorNotify);
       }
+    }
+
+    // Notify contributor that their payment was approved (if logged in)
+    if (contribution.guestId?._id) {
+      const approvedNotify = {
+        recipient: contribution.guestId._id,
+        weddingId: updatedGift.weddingId,
+        type: 'contribution',
+        title: 'Payment Approved',
+        message: `Your contribution of ${contribution.amount} ETB to ${updatedGift.name} has been approved.`,
+        link: '/guest',
+      };
+      await Notification.create(approvedNotify);
+      emitNotification(approvedNotify);
     }
 
     try {
