@@ -70,7 +70,9 @@ const DashboardManage = () => {
         setError('');
       } catch (err) {
         setGifts([]);
-        if (err.response?.status !== 404) {
+        if (err.response?.status === 404) {
+          setError('Your wedding was not found. Please create a new one.');
+        } else {
           setError(err.response?.data?.message || 'Failed to load gifts.');
         }
       } finally {
