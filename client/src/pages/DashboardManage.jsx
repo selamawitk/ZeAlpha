@@ -334,16 +334,6 @@ const DashboardManage = () => {
                 </div>
               </div>
 
-              {/* Fulfillment Preference */}
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-[#6f6257]">
-                  Fulfillment Preference
-                </label>
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                  🚧 Vendor fulfillment is coming soon. All gifts currently convert to cash on completion — you'll receive the funds directly.
-                </div>
-              </div>
-
               {/* Image */}
               <div>
                 <label className="mb-2 block text-sm font-semibold text-[#6f6257]">
