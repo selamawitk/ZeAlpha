@@ -25,7 +25,7 @@ const Spinner = () => (
 );
 
 const Dashboard = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, updateUser } = useAuth();
   const { socket } = useSocket();
   const [wedding, setWedding] = useState(null);
   const [gifts, setGifts] = useState([]);
@@ -42,6 +42,9 @@ const Dashboard = () => {
           const weddingRes = await api.get(`/weddings/${user.managedWedding}`);
           setWedding(weddingRes.data);
         } catch (err) {
+          if (err.response?.status === 404) {
+            updateUser({ managedWedding: null });
+          }
           console.error('Failed to fetch wedding', err);
         } finally {
           setLoadingWedding(false);
