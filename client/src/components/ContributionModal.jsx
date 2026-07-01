@@ -8,6 +8,7 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
   const [amount, setAmount] = useState('');
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -24,7 +25,7 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
   }, [gift?._id, isIndividual, fullPrice]);
 
   const handleClose = async () => {
-    if (isIndividual && gift._id) {
+    if (isIndividual && gift?._id) {
       try {
         await api.post(`/gifts/${gift._id}/unlock`);
       } catch {
@@ -37,15 +38,26 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
   if (!isOpen || !gift) return null;
 
   const handleStripeCheckout = async () => {
-    if (isIndividual) {
-      await api.post(`/gifts/${gift._id}/unlock`).catch(() => {});
-    }
+    const paidAmount = Number(amount);
+    try {
+      localStorage.setItem('pendingContribution', JSON.stringify({
+        giftId: gift._id,
+        giftName: gift.name,
+        amount: paidAmount,
+        guestName: guestName.trim(),
+        guestEmail: guestEmail.trim(),
+        guestPhone: guestPhone.trim(),
+        message: message.trim(),
+        timestamp: Date.now(),
+      }));
+    } catch {}
     const { data } = await api.post('/payments/create-checkout-session', {
       giftId: gift._id,
       giftName: gift.name,
-      amount: Number(amount),
+      amount: paidAmount,
       currency: 'usd',
       guestName: guestName.trim(),
+      guestEmail: guestEmail.trim(),
       guestPhone: guestPhone.trim(),
       message: message.trim(),
     });
@@ -78,7 +90,7 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
             <h2 className="text-2xl font-black text-[#2d2218]">Contribute to {gift.name}</h2>
             <p className="mt-2 text-sm text-[#6f6257]">Support the couple with a contribution.</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-white/60 transition text-[#6f6257] hover:text-[#2d2218]">
+          <button onClick={handleClose} className="p-2 rounded-xl hover:bg-white/60 transition text-[#6f6257] hover:text-[#2d2218]">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -101,6 +113,16 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
               value={guestPhone}
               onChange={(e) => setGuestPhone(e.target.value)}
               placeholder="09XXXXXXXX"
+              className="w-full rounded-2xl border border-[#e5d7c4] bg-white/65 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+            />
+          </label>
+          <label className="space-y-2 text-sm font-semibold text-[#6f6257]">
+            Email (for receipt)
+            <input
+              type="email"
+              value={guestEmail}
+              onChange={(e) => setGuestEmail(e.target.value)}
+              placeholder="guest@example.com"
               className="w-full rounded-2xl border border-[#e5d7c4] bg-white/65 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
             />
           </label>
@@ -163,7 +185,7 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-2xl border-2 border-[#dcc6a7] bg-white/50 px-6 py-3 text-sm font-bold text-[#6f6257] transition-all duration-300 hover:border-red-300 hover:bg-red-50 hover:text-red-600"
           >
             Cancel
