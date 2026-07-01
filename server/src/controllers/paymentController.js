@@ -17,7 +17,7 @@ export const createStripeIntent = async (req, res) => {
 };
 
 export const createStripeCheckout = async (req, res) => {
-  const { giftId, giftName, amount, currency = 'usd', guestName, guestPhone, message } = req.body;
+  const { giftId, giftName, amount, currency = 'usd', guestName, guestEmail, guestPhone, message } = req.body;
   if (!giftId || !amount) {
     return res.status(400).json({ message: 'giftId and amount are required' });
   }
@@ -32,28 +32,30 @@ export const createStripeCheckout = async (req, res) => {
     return res.status(400).json({ message: `Only ${remaining} ETB is remaining for this gift` });
   }
 
-  // Atomically lock the gift for 30 minutes to prevent double-allocation during checkout
-  const lockedGift = await Gift.findOneAndUpdate(
-    {
-      _id: giftId,
-      status: 'open',
-      $or: [
-        { isLocked: false },
-        { lockedUntil: { $lt: new Date() } }
-      ]
-    },
-    {
-      $set: {
-        isLocked: true,
-        lockedUntil: new Date(Date.now() + 30 * 60 * 1000),
-        lockedBy: req.user?._id || null
-      }
-    },
-    { new: true }
-  );
+  // Atomically lock the gift for 30 minutes to prevent double-allocation during checkout (individual only)
+  if (gift.type === 'individual') {
+    const lockedGift = await Gift.findOneAndUpdate(
+      {
+        _id: giftId,
+        status: 'open',
+        $or: [
+          { isLocked: false },
+          { lockedUntil: { $lt: new Date() } }
+        ]
+      },
+      {
+        $set: {
+          isLocked: true,
+          lockedUntil: new Date(Date.now() + 30 * 60 * 1000),
+          lockedBy: req.user?._id || null
+        }
+      },
+      { new: true }
+    );
 
-  if (!lockedGift) {
-    return res.status(409).json({ message: 'Gift is reserved by another guest' });
+    if (!lockedGift) {
+      return res.status(409).json({ message: 'Gift is reserved by another guest' });
+    }
   }
 
   const origin = process.env.CLIENT_URL || 'http://localhost:5173';
@@ -69,6 +71,7 @@ export const createStripeCheckout = async (req, res) => {
       giftName: giftName || 'Wedding Gift',
       guestId: req.user?._id?.toString() || 'guest',
       guestName: (guestName || '').slice(0, 100) || '',
+      guestEmail: (guestEmail || '').slice(0, 200) || '',
       guestPhone: (guestPhone || '').slice(0, 20) || '',
       message: (message || '').slice(0, 500) || '',
     },
