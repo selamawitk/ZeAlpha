@@ -1,15 +1,32 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = process.env.GEMINI_API_KEY
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-  : null;
+const apiKey = (process.env.GEMINI_API_KEY || '').replace(/^["']|["']$/g, '').trim();
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+
+const MODELS = ['gemini-1.5-flash', 'gemini-2.0-flash-exp'];
+
+const generateWithFallback = async (prompt) => {
+  if (!genAI) {
+    throw new Error('Gemini API key not configured. Set GEMINI_API_KEY in .env');
+  }
+  let lastError;
+  for (const modelName of MODELS) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      return result.response;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Gemini model ${modelName} failed:`, err.message);
+    }
+  }
+  throw lastError;
+};
 
 export const getGiftRecommendation = async ({ budget, relationship, weddingData }) => {
   if (!genAI) {
     throw new Error('Gemini API key not configured. Set GEMINI_API_KEY in .env');
   }
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const registrySummary = weddingData.gifts
     .map(g => `- ${g.name}: ${g.currentCollected}/${g.totalPrice} ETB (${Math.round((g.currentCollected/g.totalPrice)*100)}% funded, type: ${g.type}, category: ${g.category || 'general'})`)
@@ -48,8 +65,7 @@ Rules:
 - Return 1-3 recommendations`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = result.response;
+    const response = await generateWithFallback(prompt);
     const text = response.text().trim();
     
     const jsonMatch = text.match(/\[[\s\S]*\]/);
@@ -67,8 +83,6 @@ export const getRegistryPlanner = async ({ weddingData, question }) => {
   if (!genAI) {
     throw new Error('Gemini API key not configured. Set GEMINI_API_KEY in .env');
   }
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const registrySummary = weddingData.gifts
     .map(g => `- ${g.name}: ${g.totalPrice} ETB (${Math.round((g.currentCollected/g.totalPrice)*100)}% funded, type: ${g.type}, category: ${g.category || 'general'})`)
@@ -109,8 +123,7 @@ Return ONLY a JSON object (no markdown, no code fences) with EXACTLY this struct
 For any item over 5000 ETB, MUST set type to "fractional" and provide a shareableNote explaining why multiple guests should contribute.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = result.response;
+    const response = await generateWithFallback(prompt);
     const text = response.text().trim();
     
     const jsonMatch = text.match(/\{[\s\S]*\}/);
