@@ -23,7 +23,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     // Only force-logout on 401 if user actually had a token (not for guest access)
-    if (error.response?.status === 401 && localStorage.getItem('token')) {
+    if (error.response?.status === 401 && localStorage.getItem('token') && !window.location.pathname.includes('/thank-you')) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('authUser');
