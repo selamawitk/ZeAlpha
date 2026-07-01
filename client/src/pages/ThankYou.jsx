@@ -2,9 +2,10 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { CheckCircle, Heart, Share2, Download, ArrowLeft, Gift, PartyPopper, Camera, Sparkles, Clock, ChevronDown } from 'lucide-react';
+import { CheckCircle, Heart, Share2, Download, ArrowLeft, Gift, PartyPopper, Sparkles, Clock, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import api from '../api/api.js';
+import html2canvas from 'html2canvas';
 
 const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
 const glassCard = 'bg-white/60 backdrop-blur-xl border border-[#D4C39B] shadow-[0_4px_16px_rgba(0,0,0,0.05)] rounded-[28px]';
@@ -116,6 +117,8 @@ const ThankYou = () => {
         message,
         timestamp,
         giftId,
+        coupleName: giftData?.weddingId?.couple?.name || giftData?.weddingId?.weddingName || '',
+        weddingName: giftData?.weddingId?.weddingName || '',
       });
 
       // Track this contribution
@@ -177,26 +180,19 @@ const ThankYou = () => {
   const handleDownload = async () => {
     if (!cardRef.current) return;
     try {
-      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(cardRef.current, { scale: 3, backgroundColor: '#faf6f0', useCORS: true, logging: false });
-      const link = document.createElement('a');
-      link.download = `zealpha-thankyou-${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    } catch { window.print(); }
-  };
-
-  const handleSaveImage = async () => {
-    if (!cardRef.current) return;
-    try {
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(cardRef.current, { scale: 3, backgroundColor: '#faf6f0', useCORS: true, logging: false });
-      canvas.toBlob(async (blob) => {
+      canvas.toBlob((blob) => {
         if (!blob) return;
-        try { const item = new ClipboardItem({ 'image/png': blob }); await navigator.clipboard.write([item]); }
-        catch { const link = document.createElement('a'); link.download = `zealpha-thankyou-${Date.now()}.png`; link.href = canvas.toDataURL('image/png'); link.click(); }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `zealpha-thankyou-${Date.now()}.png`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
       });
-    } catch { window.print(); }
+    } catch {
+      window.print();
+    }
   };
 
   // Helper to format date
@@ -260,6 +256,16 @@ const ThankYou = () => {
               >
                 Thank You!
               </motion.h1>
+              {currentContribution?.coupleName && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.65 }}
+                  className="mt-2 text-lg font-bold text-[#8B5A00]"
+                >
+                  {currentContribution.coupleName}'s Wedding
+                </motion.p>
+              )}
               <motion.div
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
@@ -344,9 +350,6 @@ const ThankYou = () => {
               </button>
               <button onClick={handleDownload} className="inline-flex items-center gap-2 rounded-2xl border border-[#dcc6a7] bg-white/60 px-6 py-3.5 text-sm font-bold text-[#6f6257] transition-all duration-300 hover:bg-white hover:shadow-md hover:border-[#B8860B]/30 active:scale-95">
                 <Download className="h-4 w-4" /> Download
-              </button>
-              <button onClick={handleSaveImage} className="inline-flex items-center gap-2 rounded-2xl border border-[#dcc6a7] bg-white/60 px-6 py-3.5 text-sm font-bold text-[#6f6257] transition-all duration-300 hover:bg-white hover:shadow-md hover:border-[#B8860B]/30 active:scale-95">
-                <Camera className="h-4 w-4" /> Save Image
               </button>
             </motion.div>
 

@@ -227,7 +227,11 @@ export const getGifts = async (req, res) => {
 
 export const getGiftById = async (req, res) => {
   try {
-    const gift = await Gift.findById(req.params.id);
+    const gift = await Gift.findById(req.params.id).populate({
+      path: 'weddingId',
+      select: 'weddingName couple',
+      populate: { path: 'couple', select: 'name' }
+    });
     if (!gift) return res.status(404).json({ message: 'Gift not found' });
     res.json(gift);
   } catch (error) {
