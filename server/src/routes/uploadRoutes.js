@@ -6,7 +6,8 @@ const router = express.Router();
 
 const handleUpload = (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ message: 'No file uploaded' });
+    res.status(400).json({ message: 'No file uploaded' });
+    return;
   }
 
   if (useCloudinary) {
@@ -22,7 +23,8 @@ const handleUpload = (req, res) => {
 
 const handleUploadError = (err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ message: 'File too large. Max 5MB allowed.' });
+    res.status(400).json({ message: 'File too large. Max 5MB allowed.' });
+    return;
   }
   res.status(400).json({ message: err.message });
 };
