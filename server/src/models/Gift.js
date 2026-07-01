@@ -71,11 +71,10 @@ const giftSchema = new mongoose.Schema({
   deliveryNotes: { type: String }
 }, { timestamps: true });
 
-giftSchema.pre('save', function(next) {
+giftSchema.pre('save', async function() {
   if (this.currentCollected >= this.totalPrice && this.status === 'open') {
     this.status = 'fullyFunded';
   }
-  next();
 });
 
 giftSchema.virtual('isSurging').get(function() {
