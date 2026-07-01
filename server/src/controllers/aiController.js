@@ -103,6 +103,32 @@ export const getAiPlanner = async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('AI planner error:', error);
-    res.status(500).json({ message: 'Planning service unavailable. Please try again.' });
+    // Fallback: return heuristic suggestions
+    try {
+      const { weddingId } = req.body;
+      const gifts = await Gift.find({ weddingId }).sort({ priority: -1, currentCollected: -1 }).limit(5).lean();
+      const suggestions = gifts.length > 0
+        ? gifts.slice(0, 3).map(g => ({
+            name: g.name,
+            category: g.category || 'General',
+            estimatedPrice: g.totalPrice,
+            type: g.type,
+            reason: `You already have "${g.name}" at ${Math.round((g.currentCollected / g.totalPrice) * 100)}% funded. Consider promoting it or adding related items.`,
+            shareableNote: g.totalPrice > 5000 ? `This gift costs ${g.totalPrice} ETB — guests can contribute in fractions.` : null,
+          }))
+        : [
+            { name: 'Traditional Coffee Set', category: 'Traditional', estimatedPrice: 3500, type: 'fractional', reason: 'A staple for Ethiopian weddings, loved by guests and families.', shareableNote: null },
+            { name: 'Kitchen Blender Set', category: 'Kitchen', estimatedPrice: 4500, type: 'fractional', reason: 'Essential for modern Ethiopian kitchens, great for family cooking.', shareableNote: null },
+            { name: 'Living Room Sofa', category: 'Furniture', estimatedPrice: 15000, type: 'fractional', reason: 'A centerpiece for the new home, perfect as a group gift.', shareableNote: 'At 15,000 ETB, this works best as a shared gift for multiple guests.' },
+          ];
+      res.json({
+        suggestions,
+        summary: gifts.length > 0
+          ? 'Here are some suggestions based on your current registry. Add more variety by including traditional items and modern essentials.'
+          : 'Consider building a balanced registry with traditional Ethiopian items, kitchen essentials, and larger furniture pieces that guests can contribute to together.',
+      });
+    } catch (fallbackErr) {
+      res.status(500).json({ message: 'Planning service unavailable. Please try again.' });
+    }
   }
 };
