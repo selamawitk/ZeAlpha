@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, Gift } from 'lucide-react';
+import { Heart, Gift, Mail, User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import authImage from '../assets/images/auth wedding page.png';
 
@@ -37,6 +37,7 @@ const Auth = () => {
     password: '',
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -231,27 +232,33 @@ const Auth = () => {
               <form onSubmit={handleSubmit} className="space-y-3.5">
                 {mode === 'signup' && (
                   <div className="grid grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      placeholder="First Name"
-                      value={form.firstName}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, firstName: e.target.value }))
-                      }
-                      required
-                      className="rounded-2xl border border-[#e5d7c4] bg-white/55 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
-                    />
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8c755e]" />
+                      <input
+                        type="text"
+                        placeholder="First Name"
+                        value={form.firstName}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, firstName: e.target.value }))
+                        }
+                        required
+                        className="w-full rounded-2xl border border-[#e5d7c4] bg-white/55 pl-10 pr-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+                      />
+                    </div>
 
-                    <input
-                      type="text"
-                      placeholder="Last Name"
-                      value={form.lastName}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, lastName: e.target.value }))
-                      }
-                      required
-                      className="rounded-2xl border border-[#e5d7c4] bg-white/55 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
-                    />
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8c755e]" />
+                      <input
+                        type="text"
+                        placeholder="Last Name"
+                        value={form.lastName}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, lastName: e.target.value }))
+                        }
+                        required
+                        className="w-full rounded-2xl border border-[#e5d7c4] bg-white/55 pl-10 pr-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -277,28 +284,41 @@ const Auth = () => {
                   </div>
                 )}
 
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  value={form.email}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, email: e.target.value }))
-                  }
-                  required
-                  className="w-full rounded-2xl border border-[#e5d7c4] bg-white/55 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
-                />
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8c755e]" />
+                  <input
+                    type="email"
+                    placeholder="Email Address"
+                    value={form.email}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    required
+                    className="w-full rounded-2xl border border-[#e5d7c4] bg-white/55 pl-10 pr-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+                  />
+                </div>
 
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={form.password}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, password: e.target.value }))
-                  }
-                  required
-                  minLength={6}
-                  className="w-full rounded-2xl border border-[#e5d7c4] bg-white/55 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Password"
+                    value={form.password}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, password: e.target.value }))
+                    }
+                    required
+                    minLength={6}
+                    className="w-full rounded-2xl border border-[#e5d7c4] bg-white/55 pl-10 pr-11 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+                  />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8c755e]" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#8c755e] hover:text-[#2d2218] transition"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
 
                 <button
                   type="submit"
