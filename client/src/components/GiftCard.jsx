@@ -48,26 +48,26 @@ const GiftCard = ({ gift, onContribute = () => {}, contributedByMe = false }) =>
 
   return (
     <motion.div
-      className={`${glassCard} border-2 p-5 ${
+      className={`${glassCard} border-2 p-5 flex flex-col h-full ${
         isSurging ? 'border-[#B8860B]' : 'border-[#D4C39B]'
       } ${isLocked ? 'opacity-80' : ''}`}
       whileHover={{ scale: 1.02 }}
       transition={{ type: 'spring', stiffness: 300 }}
     >
       {/* Header: name + badges + image */}
-      <div className="flex items-start gap-4 mb-4">
+      <div className="flex items-start gap-3 mb-3">
         {gift.imageUrl && !imgError && (
           <img
             src={gift.imageUrl}
             alt={gift.name}
             onError={() => setImgError(true)}
-            className="w-16 h-16 rounded-xl object-cover shrink-0"
+            className="w-14 h-14 rounded-xl object-cover shrink-0"
           />
         )}
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-black text-[#2d2218]">{gift.name}</h3>
+          <h3 className="text-base font-black text-[#2d2218]">{gift.name}</h3>
           <p className="text-sm text-[#6f6257] mt-0.5">{gift.description}</p>
-          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
             {gift.type === 'individual' && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B8860B]/10 text-[#8B5A00]">
                 Unique
@@ -98,39 +98,42 @@ const GiftCard = ({ gift, onContribute = () => {}, contributedByMe = false }) =>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="mb-4">
-        <div className="flex justify-between text-sm mb-1.5">
-          <span className="font-semibold text-[#2d2218]">{Math.round(progress)}% funded</span>
-          <span className="font-bold text-[#8B5A00]">{gift.currentCollected} / {gift.totalPrice} ETB</span>
+      {/* Middle section - flex-1 to push buttons to bottom */}
+      <div className="flex-1">
+        {/* Progress bar */}
+        <div className="mb-3">
+          <div className="flex justify-between text-sm mb-1.5">
+            <span className="font-semibold text-[#2d2218]">{Math.round(progress)}% funded</span>
+            <span className="font-bold text-[#8B5A00]">{gift.currentCollected} / {gift.totalPrice} ETB</span>
+          </div>
+          <div className="w-full rounded-full h-2.5 overflow-hidden bg-[#ead9c0]">
+            <motion.div
+              className={`h-2.5 rounded-full ${goldGradient}`}
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(progress, 100)}%` }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            />
+          </div>
         </div>
-        <div className="w-full rounded-full h-2.5 overflow-hidden bg-[#ead9c0]">
-          <motion.div
-            className={`h-2.5 rounded-full ${goldGradient}`}
-            initial={{ width: 0 }}
-            animate={{ width: `${Math.min(progress, 100)}%` }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-          />
-        </div>
+
+        {/* Contributors */}
+        {gift.contributors && gift.contributors.length > 0 && (
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex -space-x-2">
+              {gift.contributors.slice(0, 4).map((c, i) => (
+                <div key={i} className="flex h-6 w-6 items-center justify-center rounded-full bg-[#B8860B]/20 text-[10px] font-bold text-[#8B5A00] border-2 border-white">
+                  {(c.isAnonymous ? 'A' : c.name?.[0] || '?').toUpperCase()}
+                </div>
+              ))}
+            </div>
+            <span className="text-xs text-[#6f6257] font-medium">
+              {gift.contributors.length} contributor{gift.contributors.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Contributors */}
-      {gift.contributors && gift.contributors.length > 0 && (
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex -space-x-2">
-            {gift.contributors.slice(0, 4).map((c, i) => (
-              <div key={i} className="flex h-6 w-6 items-center justify-center rounded-full bg-[#B8860B]/20 text-[10px] font-bold text-[#8B5A00] border-2 border-white">
-                {(c.isAnonymous ? 'A' : c.name?.[0] || '?').toUpperCase()}
-              </div>
-            ))}
-          </div>
-          <span className="text-xs text-[#6f6257] font-medium">
-            {gift.contributors.length} contributor{gift.contributors.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-      )}
-
-      {/* Action buttons */}
+      {/* Action buttons - pinned to bottom */}
       <div className="space-y-2">
         {gift.type === 'individual' && !isComplete && !isLocked && (
           <button
