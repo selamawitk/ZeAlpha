@@ -38,7 +38,7 @@ const PublicLayout = () => {
             {[
               { to: '/', label: 'Home' },
               { to: '/auth', label: 'Login' },
-              { to: '/my-gifts', label: 'My Gifts' },
+              { to: '/guest?tab=gifts', label: 'My Gifts' },
             ].map((link) => (
               <NavLink
                 key={link.to}
@@ -81,7 +81,7 @@ const PublicLayout = () => {
                 {[
                   { to: '/', label: 'Home' },
                   { to: '/auth', label: 'Login' },
-                  { to: '/my-gifts', label: 'My Gifts' },
+                  { to: '/guest?tab=gifts', label: 'My Gifts' },
                 ].map((link) => (
                   <NavLink
                     key={link.to}

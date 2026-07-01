@@ -58,7 +58,7 @@ const Auth = () => {
         } else if (userData.role === 'couple') {
           navigate('/dashboard');
         } else {
-          navigate('/guest');
+          navigate('/guest?tab=gifts');
         }
       } else {
         const newUser = await register(
@@ -77,7 +77,7 @@ const Auth = () => {
           } else if (newUser.role === 'couple') {
             navigate('/dashboard');
           } else {
-            navigate('/guest');
+            navigate('/guest?tab=gifts');
           }
         }, 1200);
       }

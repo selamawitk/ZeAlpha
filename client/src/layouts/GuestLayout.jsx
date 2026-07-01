@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import api from '../api/api.js';
@@ -61,11 +62,12 @@ const ThankYouPanel = () => {
 const GuestLayout = () => {
   const { user, logout } = useAuth();
   const { socket } = useSocket();
+  const [searchParams] = useSearchParams();
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem('guestSidebarCollapsed') === 'true';
   });
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
   const [notifCount, setNotifCount] = useState(0);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
