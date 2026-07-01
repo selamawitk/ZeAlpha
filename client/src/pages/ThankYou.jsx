@@ -87,9 +87,37 @@ const ThankYou = () => {
       }
       try {
         const { data: gift } = await api.get(`/gifts/${giftId}`);
-        const { data: contributions } = await api.get('/contributions', { params: { giftId } });
-        const last = Array.isArray(contributions) ? contributions[contributions.length - 1] : null;
+        let last = null;
+        if (user) {
+          try {
+            const { data: contributions } = await api.get('/contributions', { params: { giftId } });
+            last = Array.isArray(contributions) ? contributions[contributions.length - 1] : null;
+          } catch {}
+        }
         setContribution({ gift, contribution: last });
+        if (giftId) {
+          try {
+            const stored = JSON.parse(localStorage.getItem('contributedGiftIds') || '[]');
+            if (!stored.includes(giftId)) {
+              stored.push(giftId);
+              localStorage.setItem('contributedGiftIds', JSON.stringify(stored));
+            }
+            const guestCs = JSON.parse(localStorage.getItem('guestContributions') || '[]');
+            const amount = last?.amount || 0;
+            guestCs.unshift({
+              _id: last?._id || Date.now().toString(),
+              giftId: gift,
+              giftName: gift?.name || 'Gift',
+              amount,
+              guestName: last?.guestName || 'You',
+              paymentMethod: last?.paymentMethod || 'stripe',
+              message: last?.message || 'Thanks for your support!',
+              createdAt: new Date().toISOString(),
+              status: 'completed',
+            });
+            localStorage.setItem('guestContributions', JSON.stringify(guestCs.slice(0, 50)));
+          } catch {}
+        }
         launchConfetti();
       } catch {
         setContribution(null);
