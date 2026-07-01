@@ -34,6 +34,10 @@ export const initSocket = (server) => {
 
   io.on('connection', (socket) => {
     console.log('Socket connected:', socket.id, socket.userId ? `user:${socket.userId}` : 'anonymous');
+
+    if (socket.userId) {
+      socket.join(`user:${socket.userId}`);
+    }
     
     socket.on('joinWedding', (weddingId) => {
       if (weddingId) {
@@ -90,6 +94,9 @@ export const emitNotification = (notification) => {
   if (notification.weddingId) {
     io.to(String(notification.weddingId)).emit('notification:update', notification);
   }
+  if (notification.recipient) {
+    io.to(`user:${String(notification.recipient)}`).emit('notification:update', notification);
+  }
 };
 
 export const emitWithdrawalUpdate = (payout) => {
@@ -118,7 +125,7 @@ export const emitGiftSurge = async (gift) => {
           link: '/dashboard/gifts',
         };
         await Notification.create(surgeNotify);
-        io.to(String(room)).emit('notification:update', surgeNotify);
+        emitNotification(surgeNotify);
 
         try {
           const user = await User.findById(wedding.couple);
