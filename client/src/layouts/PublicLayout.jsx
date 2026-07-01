@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const PublicLayout = () => {
+  const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const goldGradient =
     'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
@@ -35,26 +37,32 @@ const PublicLayout = () => {
 
           {/* Desktop Nav */}
           <nav className="hidden items-center gap-3 md:flex">
-            {[
-              { to: '/', label: 'Home' },
-              { to: '/auth', label: 'Login' },
-              { to: '/guest?tab=gifts', label: 'My Gifts' },
-            ].map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.to === '/'}
-                className={({ isActive }) =>
-                  `rounded-full px-6 py-2.5 text-sm font-black transition-all duration-300 ${
-                    isActive
-                      ? `${goldGradient} text-white shadow-lg shadow-[#8B5A00]/20`
-                      : 'text-[#6f6257] hover:bg-[#f3e7d4] hover:text-[#8B5A00]'
-                  }`
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))}
+            {(() => {
+              const links = [
+                { to: '/', label: 'Home' },
+                ...(user
+                  ? [{ to: user.role === 'couple' ? '/dashboard' : '/guest?tab=gifts', label: 'Dashboard' }]
+                  : [{ to: '/auth', label: 'Login' }]
+                ),
+                { to: '/guest?tab=gifts', label: 'My Gifts' },
+              ];
+              return links.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.to === '/'}
+                  className={({ isActive }) =>
+                    `rounded-full px-6 py-2.5 text-sm font-black transition-all duration-300 ${
+                      isActive
+                        ? `${goldGradient} text-white shadow-lg shadow-[#8B5A00]/20`
+                        : 'text-[#6f6257] hover:bg-[#f3e7d4] hover:text-[#8B5A00]'
+                    }`
+                  }
+                >
+                  {link.label}
+                </NavLink>
+              ));
+            })()}
           </nav>
 
           {/* Mobile Menu */}
@@ -78,27 +86,33 @@ const PublicLayout = () => {
               className="overflow-hidden border-t border-[#eadcc9] bg-white/90 backdrop-blur-xl md:hidden"
             >
               <div className="flex flex-col gap-2 px-6 py-4">
-                {[
-                  { to: '/', label: 'Home' },
-                  { to: '/auth', label: 'Login' },
-                  { to: '/guest?tab=gifts', label: 'My Gifts' },
-                ].map((link) => (
-                  <NavLink
-                    key={link.to}
-                    to={link.to}
-                    end={link.to === '/'}
-                    onClick={() => setMobileOpen(false)}
-                    className={({ isActive }) =>
-                      `rounded-full px-4 py-2.5 text-sm font-black transition ${
-                        isActive
-                          ? 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00] text-white'
-                          : 'text-[#6f6257] hover:bg-[#f3e7d4]'
-                      }`
-                    }
-                  >
-                    {link.label}
-                  </NavLink>
-                ))}
+                {(() => {
+                  const links = [
+                    { to: '/', label: 'Home' },
+                    ...(user
+                      ? [{ to: user.role === 'couple' ? '/dashboard' : '/guest?tab=gifts', label: 'Dashboard' }]
+                      : [{ to: '/auth', label: 'Login' }]
+                    ),
+                    { to: '/guest?tab=gifts', label: 'My Gifts' },
+                  ];
+                  return links.map((link) => (
+                    <NavLink
+                      key={link.to}
+                      to={link.to}
+                      end={link.to === '/'}
+                      onClick={() => setMobileOpen(false)}
+                      className={({ isActive }) =>
+                        `rounded-full px-4 py-2.5 text-sm font-black transition ${
+                          isActive
+                            ? 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00] text-white'
+                            : 'text-[#6f6257] hover:bg-[#f3e7d4]'
+                        }`
+                      }
+                    >
+                      {link.label}
+                    </NavLink>
+                  ));
+                })()}
               </div>
             </motion.nav>
           )}

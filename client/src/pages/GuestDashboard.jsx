@@ -22,9 +22,17 @@ const GuestDashboard = () => {
         const mine = Array.isArray(data)
           ? data.filter(c => String(c.guestId?._id || c.guestId) === String(user?._id))
           : [];
-        setContributions(mine);
+        const stored = JSON.parse(localStorage.getItem('guestContributions') || '[]');
+        const merged = [...mine];
+        stored.forEach(s => {
+          if (!merged.find(m => String(m._id || m.giftId) === String(s._id || s.giftId))) {
+            merged.push(s);
+          }
+        });
+        setContributions(merged);
       } catch {
-        setContributions([]);
+        const stored = JSON.parse(localStorage.getItem('guestContributions') || '[]');
+        setContributions(stored);
       } finally {
         setLoading(false);
       }
@@ -33,6 +41,8 @@ const GuestDashboard = () => {
     if (user) {
       fetchContributions();
     } else {
+      const stored = JSON.parse(localStorage.getItem('guestContributions') || '[]');
+      setContributions(stored);
       setLoading(false);
     }
   }, [user]);
