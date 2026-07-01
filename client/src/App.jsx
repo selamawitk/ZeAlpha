@@ -51,7 +51,6 @@ function App() {
                 <Route path="forgot-password" element={<ForgotPassword />} />
                 <Route path="reset-password" element={<ResetPassword />} />
                 <Route path="thank-you" element={<ThankYou />} />
-                <Route path="my-gifts" element={<MyGifts />} />
                 <Route path="find-wedding" element={<FindWedding />} />
                 <Route path="digital-gift-card/:id" element={<DigitalGiftCard />} />
                 <Route path="privacy-policy" element={<PrivacyPolicy />} />
@@ -83,6 +82,8 @@ function App() {
                 <Route path="/guest" element={<GuestDashboard />} />
                 <Route path="/guest/*" element={<GuestDashboard />} />
               </Route>
+
+              <Route path="/my-gifts" element={<ProtectedRoute role={['guest', 'couple']}><MyGifts /></ProtectedRoute>} />
 
               <Route path="/notifications" element={<Navigate to="/guest" replace />} />
 
