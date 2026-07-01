@@ -253,14 +253,16 @@ export const handleStripeWebhook = async (req, res) => {
 
           const coupleId = weddingRes?.couple;
           if (coupleId) {
-            await Notification.create({
+            const cNotif = {
               recipient: coupleId,
               weddingId: gift.weddingId,
               type: 'contribution',
               title: 'New contribution received',
               message: `${contributorEntry.name} contributed ${amount} ETB to ${giftName || gift.name}`,
               link: '/dashboard'
-            });
+            };
+            await Notification.create(cNotif);
+            emitNotification(cNotif);
           }
 
           // Notify contributor when their payment succeeds (if logged in)
