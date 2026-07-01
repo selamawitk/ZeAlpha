@@ -86,7 +86,8 @@ export const getWeddings = async (req, res) => {
       $or: [
         { weddingName: regex },
         { couple: { $in: coupleIds } },
-        { slug: regex }
+        { slug: regex },
+        { weddingCode: regex }
       ]
     };
   }
