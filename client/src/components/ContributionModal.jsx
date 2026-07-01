@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Lock } from 'lucide-react';
 import api from '../api/api.js';
 
 const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
@@ -12,9 +12,34 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const isIndividual = gift?.type === 'individual';
+  const fullPrice = isIndividual ? (gift?.totalPrice || 0) - (gift?.currentCollected || 0) : 0;
+
+  useEffect(() => {
+    if (isIndividual) {
+      setAmount(String(fullPrice));
+    } else {
+      setAmount('');
+    }
+  }, [gift?._id, isIndividual, fullPrice]);
+
+  const handleClose = async () => {
+    if (isIndividual && gift._id) {
+      try {
+        await api.post(`/gifts/${gift._id}/unlock`);
+      } catch {
+        // best-effort unlock
+      }
+    }
+    onClose();
+  };
+
   if (!isOpen || !gift) return null;
 
   const handleStripeCheckout = async () => {
+    if (isIndividual) {
+      await api.post(`/gifts/${gift._id}/unlock`).catch(() => {});
+    }
     const { data } = await api.post('/payments/create-checkout-session', {
       giftId: gift._id,
       giftName: gift.name,
@@ -98,15 +123,30 @@ const ContributionModal = ({ gift, isOpen, onClose }) => {
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="space-y-2 text-sm font-semibold text-[#6f6257]">
             Contribution amount (ETB)
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="250"
-              min="1"
-              max={gift.totalPrice - gift.currentCollected}
-              className="w-full rounded-2xl border border-[#e5d7c4] bg-white/65 px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
-            />
+            <div className="relative">
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="250"
+                min="1"
+                max={gift.totalPrice - gift.currentCollected}
+                disabled={isIndividual}
+                className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10 ${
+                  isIndividual
+                    ? 'border-[#B8860B]/30 bg-[#fff7ea] text-[#8B5A00] font-bold cursor-not-allowed'
+                    : 'border-[#e5d7c4] bg-white/65'
+                }`}
+              />
+              {isIndividual && (
+                <Lock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B8860B]" />
+              )}
+            </div>
+            {isIndividual && (
+              <p className="mt-1 text-xs text-[#8B5A00] font-semibold">
+                This unique gift requires the full amount
+              </p>
+            )}
           </label>
           <div className="rounded-2xl border border-[#CFA97A] bg-[#B8860B]/5 p-4 flex items-center justify-center">
             <p className="text-sm text-[#6f6257]">Secure payment via <strong>Stripe</strong></p>
