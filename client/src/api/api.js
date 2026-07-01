@@ -260,4 +260,13 @@ export const getWeddingAnalytics = async (weddingId) => {
   return data;
 };
 
+//
+// USER PROFILE
+//
+
+export const updateUserProfile = async (profileData) => {
+  const { data } = await api.put('/users/profile', profileData);
+  return data;
+};
+
 export default api;

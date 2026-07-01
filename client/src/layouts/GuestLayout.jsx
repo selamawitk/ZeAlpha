@@ -25,8 +25,24 @@ import MyGifts from '../pages/MyGifts.jsx';
 const SettingsPanel = () => {
   const { user, updateUser } = useAuth();
   const [name, setName] = useState(user?.name || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
   const handleSave = async () => {
-    updateUser({ name });
+    setSaving(true);
+    setError('');
+    setSaved(false);
+    try {
+      const { updateUserProfile } = await import('../api/api.js');
+      const updated = await updateUserProfile({ name });
+      updateUser({ name: updated.name, token: updated.token });
+      if (updated.token) localStorage.setItem('token', updated.token);
+      setSaved(true);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
   };
   return (
     <div className="max-w-lg mx-auto mt-8">
@@ -34,7 +50,11 @@ const SettingsPanel = () => {
       <div className="rounded-[28px] bg-gradient-to-br from-[#F4EBDD]/95 via-[#E7D3B7]/92 to-[#D6B58B]/90 border border-[#CFA97A] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.07)]">
         <label className="block text-sm font-bold text-[#6f6257] mb-2">Display Name</label>
         <input value={name} onChange={e => setName(e.target.value)} className="w-full rounded-2xl border border-[#e5d7c4] bg-white/65 px-4 py-3 text-sm outline-none focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10" />
-        <button onClick={handleSave} className="mt-4 rounded-2xl bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00] px-6 py-3 text-sm font-black text-white shadow-lg">Save</button>
+        <button onClick={handleSave} disabled={saving} className="mt-4 rounded-2xl bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00] px-6 py-3 text-sm font-black text-white shadow-lg disabled:opacity-50">
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+        {saved && <p className="mt-2 text-sm text-green-700 font-medium">Saved successfully</p>}
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>
     </div>
   );
@@ -61,7 +81,7 @@ const ThankYouPanel = () => {
 
 const GuestLayout = () => {
   const { user, logout } = useAuth();
-  const { socket } = useSocket();
+  const { socket, joinWedding } = useSocket();
   const [searchParams] = useSearchParams();
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem('guestSidebarCollapsed') === 'true';
@@ -96,11 +116,18 @@ const GuestLayout = () => {
       toastTimer.current = setTimeout(() => setToast(null), 5000);
     };
     socket.on('notification:update', handler);
+    // Also join any wedding rooms for notification delivery
+    const tryJoinWedding = () => {
+      const path = window.location.pathname;
+      const match = path.match(/\/w\/([^/]+)/);
+      if (match) joinWedding(match[1]);
+    };
+    tryJoinWedding();
     return () => {
       socket.off('notification:update', handler);
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
-  }, [socket, activeTab]);
+  }, [socket, activeTab, joinWedding]);
 
   useEffect(() => {
     if (activeTab === 'notifications') {
