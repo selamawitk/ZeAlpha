@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useSocket } from '../context/SocketContext.jsx';
 import ProfileDropdown from '../components/ProfileDropdown.jsx';
 import {
   LayoutDashboard,
@@ -14,15 +15,40 @@ import {
   Truck,
   Bell,
   Menu,
-  X
+  X,
+  AlertTriangle
 } from 'lucide-react';
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
+  const { socket } = useSocket();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem('dashboardSidebarCollapsed') === 'true';
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (notif) => {
+      setNotifCount(c => c + 1);
+      setToast(notif);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 5000);
+    };
+    socket.on('notification:update', handler);
+    return () => {
+      socket.off('notification:update', handler);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    if (location.pathname === '/dashboard/notifications') setNotifCount(0);
+  }, [location.pathname]);
 
   const navItem = ({ isActive }) =>
     `group relative flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300
@@ -104,7 +130,7 @@ const DashboardLayout = () => {
             </NavLink>
 
             <NavLink to="/dashboard/notifications" className={navItem} onClick={() => setMobileOpen(false)}>
-              <Bell size={18} className="shrink-0" />
+              <span className="relative shrink-0"><Bell size={18} />{notifCount > 0 && <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">{notifCount > 9 ? '9+' : notifCount}</span>}</span>
               {!collapsed && <span>Notifications</span>}
             </NavLink>
           </nav>
@@ -128,6 +154,22 @@ const DashboardLayout = () => {
         {/* MAIN BODY */}
         <div className="flex flex-col flex-1 min-h-screen w-full">
 
+          {toast && (
+            <div className="fixed top-4 right-4 z-[100] max-w-sm animate-slide-in rounded-[28px] bg-gradient-to-br from-[#F4EBDD]/98 via-[#E7D3B7]/98 to-[#D6B58B]/98 border border-[#CFA97A] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#B8860B]/10 shrink-0">
+                  <Bell className="h-4 w-4 text-[#8B5A00]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[#2d2218] truncate">{toast.title}</p>
+                  <p className="text-xs text-[#6f6257] mt-0.5 line-clamp-2">{toast.message}</p>
+                </div>
+                <button onClick={() => setToast(null)} className="shrink-0 p-1 rounded-full hover:bg-white/60">
+                  <X size={14} className="text-[#6f6257]" />
+                </button>
+              </div>
+            </div>
+          )}
           <header className="sticky top-0 z-40 px-4 lg:px-6 pt-5 pb-4 backdrop-blur-xl bg-[#F7F3EA]/90 border-b border-[#D4C39B]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
