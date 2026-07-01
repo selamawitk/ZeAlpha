@@ -151,12 +151,17 @@ export const createContribution = async (req, res) => {
       if (req.user && req.user.email) {
         await sendGiftReceipt(req.user.email, req.user.name, amount, updatedGift.name, updatedGift.digitalCardUrl);
       }
-      if (willCompleteGift) {
-        const couple = await User.findById(weddingRes.couple);
-        if (couple) await sendWeddingFundedAlert(couple.email, updatedGift.name, updatedGift.totalPrice);
-      }
     } catch (err) {
       console.error('Email delivery failed:', err);
+    }
+  }
+
+  if (willCompleteGift) {
+    try {
+      const couple = await User.findById(weddingRes.couple);
+      if (couple) await sendWeddingFundedAlert(couple.email, updatedGift.name, updatedGift.totalPrice);
+    } catch (err) {
+      console.error('Wedding funded email failed:', err);
     }
   }
 
@@ -493,7 +498,8 @@ export const getContributions = async (req, res) => {
 
   const contributions = await Contribution.find(query)
     .populate('giftId', 'name totalPrice')
-    .populate('guestId', 'name email');
+    .populate('guestId', 'name email')
+    .populate('weddingId', 'weddingName slug weddingDate bannerImage');
   res.json(contributions);
 };
 
