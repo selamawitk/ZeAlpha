@@ -34,6 +34,7 @@ const DashboardManage = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadPhase, setUploadPhase] = useState('');
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   const [weddingId, setWeddingId] = useState(
     user?.managedWedding || localStorage.getItem('weddingId') || ''
@@ -196,6 +197,7 @@ const DashboardManage = () => {
         imageFile: null,
       });
       setEditGiftId(null);
+      setFileInputKey(prev => prev + 1);
     } catch (err) {
       if (!err.response) {
         setError('Server is waking up, please wait a moment and try again.');
@@ -343,6 +345,7 @@ const DashboardManage = () => {
                 </label>
 
                 <input
+                  key={fileInputKey}
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
