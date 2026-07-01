@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, X, ChevronRight, AlertCircle, CheckCircle, Plus } from 'lucide-react';
+import { Sparkles, X, ChevronRight, AlertCircle, CheckCircle, Plus, Image } from 'lucide-react';
 import api from '../api/api.js';
 
 const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
@@ -22,6 +22,8 @@ const AiPlanner = ({ weddingId, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [addingGifts, setAddingGifts] = useState({});
+  const [giftImages, setGiftImages] = useState({});
+  const [showImageInput, setShowImageInput] = useState({});
 
   const getQuestion = () => {
     if (useCustom) return customQuestion;
@@ -60,6 +62,7 @@ const AiPlanner = ({ weddingId, onClose }) => {
         totalPrice: suggestion.estimatedPrice || 1000,
         type: suggestion.type || 'fractional',
         description: suggestion.reason || '',
+        imageUrl: giftImages[suggestion.name] || '',
       });
       setAddingGifts(prev => ({ ...prev, [suggestion.name]: false }));
       setResult(prev => ({
@@ -79,6 +82,8 @@ const AiPlanner = ({ weddingId, onClose }) => {
     setUseCustom(false);
     setResult(null);
     setError('');
+    setGiftImages({});
+    setShowImageInput({});
   };
 
   return (
@@ -194,6 +199,22 @@ const AiPlanner = ({ weddingId, onClose }) => {
                             <p className="mt-1 text-xs font-semibold text-blue-700 italic">
                               💡 {s.shareableNote}
                             </p>
+                          )}
+                          <button
+                            onClick={() => setShowImageInput(prev => ({ ...prev, [s.name]: !prev[s.name] }))}
+                            className="mt-2 flex items-center gap-1 text-xs font-semibold text-[#B8860B] hover:text-[#8B5A00] transition"
+                          >
+                            <Image size={12} />
+                            {showImageInput[s.name] ? 'Hide image' : 'Add image URL'}
+                          </button>
+                          {showImageInput[s.name] && (
+                            <input
+                              type="text"
+                              placeholder="https://example.com/gift-image.jpg"
+                              value={giftImages[s.name] || ''}
+                              onChange={(e) => setGiftImages(prev => ({ ...prev, [s.name]: e.target.value }))}
+                              className="mt-2 w-full rounded-xl border border-[#D4C39B] bg-white/65 px-3 py-2 text-xs outline-none transition-all focus:border-[#B8860B] focus:ring-2 focus:ring-[#B8860B]/10"
+                            />
                           )}
                         </div>
                         <button
