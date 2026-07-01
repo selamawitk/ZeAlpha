@@ -74,7 +74,7 @@ const Landing = () => {
                 </Link>
 
                 <Link
-                  to="/my-gifts"
+                  to="/find-wedding"
                   className="rounded-full border border-[#B8860B] px-8 py-4 text-center font-bold text-[#8B5A00] transition hover:bg-[#B8860B] hover:text-white"
                 >
                   Find a Wedding
