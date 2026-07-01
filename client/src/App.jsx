@@ -83,7 +83,7 @@ function App() {
                 <Route path="/guest/*" element={<GuestDashboard />} />
               </Route>
 
-              <Route path="/my-gifts" element={<ProtectedRoute role={['guest', 'couple']}><MyGifts /></ProtectedRoute>} />
+              <Route path="/my-gifts" element={<MyGifts />} />
 
               <Route path="/notifications" element={<Navigate to="/guest" replace />} />
 

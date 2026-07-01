@@ -72,7 +72,14 @@ const MyGifts = () => {
         }
       } else {
         const existing = JSON.parse(localStorage.getItem('guestContributions') || '[]');
-        setHistory(existing);
+        const seen = new Set();
+        const deduped = existing.filter(c => {
+          const key = c.giftId?._id || c.giftId || c._id;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        setHistory(deduped);
       }
     };
 
