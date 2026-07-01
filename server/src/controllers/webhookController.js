@@ -154,7 +154,7 @@ export const handleStripeWebhook = async (req, res) => {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const { giftId, giftName, guestId, guestName, guestPhone, message } = session.metadata;
+    const { giftId, giftName, guestId, guestName, guestEmail, guestPhone, message } = session.metadata;
     const amount = session.amount_total / 100;
     const transactionId = session.payment_intent;
 
@@ -221,12 +221,12 @@ export const handleStripeWebhook = async (req, res) => {
 
           // Send email receipts
           try {
-            const guestEmail = session.customer_details?.email || session.customer_email;
-            if (guestEmail) {
-              await sendGiftReceipt(guestEmail, contributorEntry.name, amount, updatedGift.name, updatedGift.digitalCardUrl);
+            const receiptEmail = guestEmail || session.customer_details?.email || session.customer_email;
+            if (receiptEmail) {
+              await sendGiftReceipt(receiptEmail, contributorEntry.name, amount, updatedGift.name, updatedGift.digitalCardUrl);
             }
-            if (willComplete && coupleId) {
-              const couple = await User.findById(coupleId);
+            if (willComplete && weddingRes?.couple) {
+              const couple = await User.findById(weddingRes.couple);
               if (couple?.email) {
                 await sendWeddingFundedAlert(couple.email, updatedGift.name, updatedGift.totalPrice);
               }
@@ -267,14 +267,16 @@ export const handleStripeWebhook = async (req, res) => {
 
           // Notify contributor when their payment succeeds (if logged in)
           if (guestId && guestId !== 'guest') {
-            await Notification.create({
+            const gNotif = {
               recipient: guestId,
               weddingId: gift.weddingId,
               type: 'contribution',
               title: 'Payment Successful',
               message: `Your contribution of ${amount} ETB to ${giftName || gift.name} was successful.`,
               link: '/guest'
-            });
+            };
+            await Notification.create(gNotif);
+            emitNotification(gNotif);
           }
 
           if (willComplete) {
