@@ -3,17 +3,41 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: process.env.EMAIL_PORT === '465',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+let transporter = null;
+
+const getTransporter = () => {
+  if (transporter) return transporter;
+  const host = process.env.EMAIL_HOST;
+  const port = parseInt(process.env.EMAIL_PORT, 10);
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+  if (!host || !port || !user || !pass) {
+    console.warn('Email not configured — missing EMAIL_HOST, EMAIL_PORT, EMAIL_USER, or EMAIL_PASS');
+    return null;
+  }
+  transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+  return transporter;
+};
 
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+
+const sendMail = async (mailOptions) => {
+  const t = getTransporter();
+  if (!t) {
+    console.warn('Email skipped — transporter not available');
+    return;
+  }
+  try {
+    await t.sendMail(mailOptions);
+  } catch (err) {
+    console.error('Failed to send email:', err.message);
+  }
+};
 
 export const sendGiftReceipt = async (guestEmail, guestName, amount, giftName, digitalCardUrl) => {
   const mailOptions = {
@@ -37,7 +61,7 @@ export const sendGiftReceipt = async (guestEmail, guestName, amount, giftName, d
     `,
   };
 
-  return transporter.sendMail(mailOptions);
+  return sendMail(mailOptions);
 };
 
 export const sendWeddingFundedAlert = async (coupleEmail, giftName, totalAmount) => {
@@ -57,7 +81,7 @@ export const sendWeddingFundedAlert = async (coupleEmail, giftName, totalAmount)
     `,
   };
 
-  return transporter.sendMail(mailOptions);
+  return sendMail(mailOptions);
 };
 
 export const sendPayoutNotification = async (coupleEmail, amount, method) => {
@@ -75,7 +99,7 @@ export const sendPayoutNotification = async (coupleEmail, amount, method) => {
     `,
   };
 
-  return transporter.sendMail(mailOptions);
+  return sendMail(mailOptions);
 };
 
 export const sendPasswordResetEmail = async (userEmail, resetToken) => {
@@ -98,7 +122,7 @@ export const sendPasswordResetEmail = async (userEmail, resetToken) => {
     `,
   };
 
-  return transporter.sendMail(mailOptions);
+  return sendMail(mailOptions);
 };
 
 export const sendGiftSurgeAlert = async (coupleEmail, giftName, progress, giftLink) => {
@@ -116,7 +140,7 @@ export const sendGiftSurgeAlert = async (coupleEmail, giftName, progress, giftLi
       </div>
     `,
   };
-  return transporter.sendMail(mailOptions);
+  return sendMail(mailOptions);
 };
 
 export const sendOrderStatusEmail = async (coupleEmail, giftName, vendorName, status, orderLink) => {
@@ -135,7 +159,7 @@ export const sendOrderStatusEmail = async (coupleEmail, giftName, vendorName, st
       </div>
     `,
   };
-  return transporter.sendMail(mailOptions);
+  return sendMail(mailOptions);
 };
 
 export const sendWithdrawalCreatedEmail = async (coupleEmail, amount) => {
@@ -151,7 +175,7 @@ export const sendWithdrawalCreatedEmail = async (coupleEmail, amount) => {
       </div>
     `,
   };
-  return transporter.sendMail(mailOptions);
+  return sendMail(mailOptions);
 };
 
 export const sendWithdrawalApprovedEmail = async (coupleEmail, amount) => {
@@ -167,7 +191,7 @@ export const sendWithdrawalApprovedEmail = async (coupleEmail, amount) => {
       </div>
     `,
   };
-  return transporter.sendMail(mailOptions);
+  return sendMail(mailOptions);
 };
 
 export const sendWeddingApproachingAlert = async (coupleEmail, weddingName, weddingDate, daysAway) => {
@@ -186,7 +210,7 @@ export const sendWeddingApproachingAlert = async (coupleEmail, weddingName, wedd
       </div>
     `,
   };
-  return transporter.sendMail(mailOptions);
+  return sendMail(mailOptions);
 };
 
 export const sendSupportEmail = async ({ name, email, subject, message }) => {
@@ -206,5 +230,5 @@ export const sendSupportEmail = async ({ name, email, subject, message }) => {
       </div>
     `,
   };
-  return transporter.sendMail(mailOptions);
+  return sendMail(mailOptions);
 };
