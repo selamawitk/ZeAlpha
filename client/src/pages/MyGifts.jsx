@@ -92,14 +92,14 @@ const MyGifts = () => {
         <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-[#c49b52]/10 blur-3xl"></div>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-6xl">
+      <div className="relative z-10 mx-auto max-w-6xl px-0 sm:px-2">
         {/* Search Section */}
-        <div className="mb-8 grid gap-6 lg:grid-cols-2">
+        <div className="mb-6 sm:mb-8 grid gap-4 sm:gap-6 lg:grid-cols-2">
           {/* Search by Name */}
-          <div className="rounded-[32px] border border-[#e7d6c1] bg-white/80 p-6 shadow-md backdrop-blur-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <Search className="h-5 w-5 text-[#8B5A00]" />
-              <h2 className="text-lg font-black text-[#2d2218]">Find a Wedding</h2>
+          <div className="rounded-[24px] sm:rounded-[32px] border border-[#e7d6c1] bg-white/80 p-4 sm:p-6 shadow-md backdrop-blur-xl">
+            <div className="flex items-center gap-3 mb-3 sm:mb-4">
+              <Search className="h-5 w-5 text-[#8B5A00] shrink-0" />
+              <h2 className="text-base sm:text-lg font-black text-[#2d2218]">Find a Wedding</h2>
             </div>
             <div className="flex gap-2">
               <input
@@ -108,18 +108,18 @@ const MyGifts = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="Search by name, wedding title..."
-                className="flex-1 rounded-2xl border border-[#dcc6a7] bg-white/60 px-4 py-3 text-sm outline-none focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+                className="flex-1 min-w-0 rounded-2xl border border-[#dcc6a7] bg-white/60 px-3 sm:px-4 py-2.5 sm:py-3 text-sm outline-none focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
               />
               <button
                 onClick={handleSearch}
                 disabled={searching}
-                className={`rounded-2xl ${goldGradient} px-5 py-3 text-sm font-bold text-white shadow-md disabled:opacity-50`}
+                className={`rounded-2xl ${goldGradient} shrink-0 px-4 sm:px-5 py-2.5 sm:py-3 text-sm font-bold text-white shadow-md disabled:opacity-50`}
               >
                 {searching ? '...' : 'Search'}
               </button>
             </div>
             {searchResults.length > 0 && (
-              <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
+              <div className="mt-3 sm:mt-4 space-y-2 max-h-48 sm:max-h-60 overflow-y-auto">
                 {searchResults.map((w) => (
                   <Link
                     key={w._id}
@@ -140,12 +140,12 @@ const MyGifts = () => {
           </div>
 
           {/* Lookup by Code */}
-          <div className="rounded-[32px] border border-[#e7d6c1] bg-white/80 p-6 shadow-md backdrop-blur-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <Hash className="h-5 w-5 text-[#8B5A00]" />
-              <h2 className="text-lg font-black text-[#2d2218]">Wedding Code</h2>
+          <div className="rounded-[24px] sm:rounded-[32px] border border-[#e7d6c1] bg-white/80 p-4 sm:p-6 shadow-md backdrop-blur-xl">
+            <div className="flex items-center gap-3 mb-3 sm:mb-4">
+              <Hash className="h-5 w-5 text-[#8B5A00] shrink-0" />
+              <h2 className="text-base sm:text-lg font-black text-[#2d2218]">Wedding Code</h2>
             </div>
-            <p className="text-xs text-[#6f6257] mb-3">Enter the code from the invitation (e.g., ABC123)</p>
+            <p className="text-xs text-[#6f6257] mb-2 sm:mb-3">Enter the code from the invitation (e.g., ABC123)</p>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -153,11 +153,11 @@ const MyGifts = () => {
                 onChange={(e) => setCodeInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCodeLookup()}
                 placeholder="Enter wedding code"
-                className="flex-1 rounded-2xl border border-[#dcc6a7] bg-white/60 px-4 py-3 text-sm outline-none uppercase focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
+                className="flex-1 min-w-0 rounded-2xl border border-[#dcc6a7] bg-white/60 px-3 sm:px-4 py-2.5 sm:py-3 text-sm outline-none uppercase focus:border-[#B8860B] focus:ring-4 focus:ring-[#B8860B]/10"
               />
               <button
                 onClick={handleCodeLookup}
-                className={`rounded-2xl ${goldGradient} px-5 py-3 text-sm font-bold text-white shadow-md`}
+                className={`rounded-2xl ${goldGradient} shrink-0 px-4 sm:px-5 py-2.5 sm:py-3 text-sm font-bold text-white shadow-md`}
               >
                 Go
               </button>
@@ -165,7 +165,7 @@ const MyGifts = () => {
             {codeResult && (
               <Link
                 to={`/w/${codeResult.slug}`}
-                className="mt-4 block rounded-xl border border-green-200 bg-green-50 p-3 text-sm"
+                className="mt-3 sm:mt-4 block rounded-xl border border-green-200 bg-green-50 p-3 text-sm"
               >
                 <p className="font-bold text-green-800">{codeResult.weddingName}</p>
                 <p className="text-green-700 text-xs mt-0.5">Click to view registry</p>
@@ -175,61 +175,61 @@ const MyGifts = () => {
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.3fr_0.7fr]">
 
           {/* Main Card */}
-          <div className="rounded-[32px] border border-[#e7d6c1] bg-gradient-to-br from-[#fffdf9]/95 via-[#f8efe2]/92 to-[#ecdcc7]/90 p-8 shadow-[0_12px_40px_rgba(120,90,40,0.10)] backdrop-blur-xl">
+          <div className="rounded-[24px] sm:rounded-[32px] border border-[#e7d6c1] bg-gradient-to-br from-[#fffdf9]/95 via-[#f8efe2]/92 to-[#ecdcc7]/90 p-5 sm:p-8 shadow-[0_12px_40px_rgba(120,90,40,0.10)] backdrop-blur-xl">
             
-            <h1 className="text-3xl font-black tracking-tight text-[#2d2218]">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#2d2218]">
               My Gifts
             </h1>
 
-            <p className="mt-3 text-sm leading-7 text-[#6f6257]">
+            <p className="mt-2 sm:mt-3 text-sm leading-6 sm:leading-7 text-[#6f6257]">
               Your contribution history and gift activity.
             </p>
 
             {history.length === 0 ? (
-              <div className="mt-8 flex flex-col items-center justify-center rounded-[28px] border border-[#eadcc9] bg-white/60 px-6 py-14 text-center shadow-sm backdrop-blur-sm">
+              <div className="mt-6 sm:mt-8 flex flex-col items-center justify-center rounded-[24px] sm:rounded-[28px] border border-[#eadcc9] bg-white/60 px-4 sm:px-6 py-10 sm:py-14 text-center shadow-sm backdrop-blur-sm">
                 
-                <div className={`flex h-16 w-16 items-center justify-center rounded-full ${goldGradient} shadow-lg shadow-[#8B5A00]/20`}>
-                  <Heart className="h-8 w-8 text-white" />
+                <div className={`flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full ${goldGradient} shadow-lg shadow-[#8B5A00]/20`}>
+                  <Heart className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                 </div>
 
-                <p className="mt-6 text-xl font-black text-[#2d2218]">
+                <p className="mt-4 sm:mt-6 text-lg sm:text-xl font-black text-[#2d2218]">
                   No contributions yet
                 </p>
 
-                <p className="mt-3 max-w-md text-sm leading-7 text-[#6f6257]">
+                <p className="mt-3 max-w-md text-sm leading-6 sm:leading-7 text-[#6f6257]">
                   Browse a registry and support a couple with
                   seamless contribution experiences.
                 </p>
               </div>
             ) : (
-              <div className="mt-8 space-y-5">
+              <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-5">
                 {history.map((item, index) => (
                   <div
                     key={index}
-                    className="rounded-[28px] border border-[#e3d0b7] bg-white/55 p-5 shadow-sm backdrop-blur-sm transition-all duration-300 hover:shadow-lg"
+                    className="rounded-[24px] sm:rounded-[28px] border border-[#e3d0b7] bg-white/55 p-4 sm:p-5 shadow-sm backdrop-blur-sm transition-all duration-300 hover:shadow-lg"
                   >
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-3 sm:gap-4">
 
-                      <div>
-                        <p className="text-lg font-black text-[#2d2218]">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base sm:text-lg font-black text-[#2d2218] truncate">
                           {item.giftName || item.giftId?.name || 'Gift'}
                         </p>
 
-                        <p className="mt-1 text-sm text-[#6f6257]">
+                        <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-[#6f6257] truncate">
                           {item.guestName || item.guestId?.name || 'Guest'} •{' '}
                           {item.paymentMethod || 'N/A'}
                         </p>
                       </div>
 
-                      <p className="text-lg font-black text-[#8B5A00]">
+                      <p className="text-base sm:text-lg font-black text-[#8B5A00] shrink-0">
                         ETB {item.amount}
                       </p>
                     </div>
 
-                    <p className="mt-4 text-sm leading-7 text-[#6f6257]">
+                    <p className="mt-3 sm:mt-4 text-sm leading-6 sm:leading-7 text-[#6f6257]">
                       {item.message ||
                         'Thanks for your support!'}
                     </p>
@@ -240,31 +240,31 @@ const MyGifts = () => {
           </div>
 
           {/* Sidebar */}
-          <aside className="rounded-[32px] border border-[#e2cfb5] bg-gradient-to-br from-[#f7ecdc]/95 via-[#ead7bc]/92 to-[#dcb98e]/90 p-8 shadow-[0_12px_40px_rgba(120,90,40,0.10)] backdrop-blur-xl">
+          <aside className="rounded-[24px] sm:rounded-[32px] border border-[#e2cfb5] bg-gradient-to-br from-[#f7ecdc]/95 via-[#ead7bc]/92 to-[#dcb98e]/90 p-5 sm:p-8 shadow-[0_12px_40px_rgba(120,90,40,0.10)] backdrop-blur-xl">
             
-            <h2 className="text-2xl font-black text-[#2d2218]">
+            <h2 className="text-xl sm:text-2xl font-black text-[#2d2218]">
               Guest Access
             </h2>
 
-            <p className="mt-4 text-sm leading-7 text-[#6f6257]">
+            <p className="mt-3 sm:mt-4 text-sm leading-6 sm:leading-7 text-[#6f6257]">
               Capture guest details gently and allow contributions
               to flow without forcing complicated signup steps.
             </p>
 
             <Link
               to="/auth"
-              className={`mt-8 inline-flex rounded-2xl ${goldGradient} px-6 py-3 text-sm font-black text-white shadow-lg shadow-[#8B5A00]/20 transition-all duration-300 hover:scale-[1.02] hover:brightness-110`}
+              className={`mt-6 sm:mt-8 inline-flex rounded-2xl ${goldGradient} px-5 sm:px-6 py-2.5 sm:py-3 text-sm font-black text-white shadow-lg shadow-[#8B5A00]/20 transition-all duration-300 hover:scale-[1.02] hover:brightness-110`}
             >
               Manage Contributions
             </Link>
 
             {/* Decorative Box */}
-            <div className="mt-8 rounded-[24px] border border-[#e4d1b7] bg-white/40 p-5 backdrop-blur-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#8B5A00]">
+            <div className="mt-6 sm:mt-8 rounded-[20px] sm:rounded-[24px] border border-[#e4d1b7] bg-white/40 p-4 sm:p-5 backdrop-blur-sm">
+              <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-[#8B5A00]">
                 Contribution Experience
               </p>
 
-              <p className="mt-3 text-sm leading-7 text-[#6f6257]">
+              <p className="mt-2 sm:mt-3 text-sm leading-6 sm:leading-7 text-[#6f6257]">
                 Elegant, simple, and modern gifting designed for
                 couples and guests alike.
               </p>
