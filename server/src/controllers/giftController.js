@@ -47,6 +47,7 @@ export const addGift = async (req, res) => {
 
     res.status(201).json(gift);
   } catch (error) {
+    console.error('addGift error:', error.message, error.stack);
     res.status(500).json({ message: error.message });
   }
 };
