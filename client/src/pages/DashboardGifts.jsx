@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 import GiftManager from '../components/GiftManager.jsx';
@@ -8,6 +9,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 
 const DashboardGifts = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [gifts, setGifts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -207,7 +209,7 @@ const DashboardGifts = () => {
                 transition={{ type: 'spring', stiffness: 300 }}
                 className="transition-all duration-300 hover:-translate-y-1"
               >
-                <GiftCard gift={gift} />
+                <GiftCard gift={gift} isOwner onEdit={() => navigate('/dashboard/manage')} />
               </motion.div>
             ))}
           </motion.div>

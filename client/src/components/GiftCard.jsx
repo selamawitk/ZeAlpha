@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Gift, Clock, Flame, Share2 } from 'lucide-react';
+import { Lock, Gift, Clock, Flame, Share2, Edit3, XCircle } from 'lucide-react';
 import api from '../api/api.js';
 
 const goldGradient = 'bg-gradient-to-r from-[#B8860B] via-[#A0700A] to-[#8B5A00]';
 const glassCard = 'bg-white/60 backdrop-blur-xl border border-[#D4C39B] shadow-[0_4px_16px_rgba(0,0,0,0.05)] rounded-[28px]';
 
-const GiftCard = ({ gift, onContribute = () => {}, contributedByMe = false }) => {
+const GiftCard = ({ gift, onContribute = () => {}, contributedByMe = false, isOwner = false, onEdit }) => {
   const [imgError, setImgError] = useState(false);
   const progress = gift.totalPrice > 0 ? (gift.currentCollected / gift.totalPrice) * 100 : 0;
   const isSurging = progress > 90 || gift.isSurging || gift.isAlmostComplete;
@@ -135,53 +135,96 @@ const GiftCard = ({ gift, onContribute = () => {}, contributedByMe = false }) =>
 
       {/* Action buttons - pinned to bottom */}
       <div className="space-y-2">
-        {gift.type === 'individual' && !isComplete && !isLocked && (
-          <button
-            onClick={handleReserve}
-            className="w-full rounded-xl border-2 border-[#B8860B] text-[#8B5A00] py-2.5 text-sm font-bold hover:bg-[#B8860B]/5 transition"
-          >
-            <Lock size={14} className="inline mr-1" />
-            Reserve & Contribute
-          </button>
-        )}
+        {isOwner ? (
+          <>
+            {gift.type === 'individual' && !isComplete && !isLocked && (
+              <button
+                onClick={handleReserve}
+                className="w-full rounded-xl border-2 border-[#B8860B] text-[#8B5A00] py-2.5 text-sm font-bold hover:bg-[#B8860B]/5 transition"
+              >
+                <Lock size={14} className="inline mr-1" />
+                Reserve & Contribute
+              </button>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => onEdit?.(gift)}
+                disabled={gift.currentCollected > 0 || isComplete}
+                className={`flex-1 rounded-xl py-2.5 text-sm font-black transition-all duration-300 ${
+                  gift.currentCollected > 0 || isComplete
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : `${goldGradient} text-white shadow-md shadow-[#8B5A00]/20 hover:brightness-110`
+                }`}
+              >
+                {gift.currentCollected > 0 || isComplete ? 'Funding Started' : 'Edit Gift'}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const url = `${window.location.origin}/digital-gift-card/${gift._id}`;
+                  if (navigator.share) {
+                    navigator.share({ title: gift.name, text: `Contribute to ${gift.name} on ZeAlpha!`, url });
+                  } else {
+                    navigator.clipboard.writeText(url);
+                  }
+                }}
+                className="rounded-xl border border-[#dcc6a7] bg-white/60 px-3.5 py-2.5 text-sm font-semibold text-[#6f6257] transition hover:bg-[#f5e7ca] hover:text-[#8B5A00]"
+              >
+                <Share2 size={14} />
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            {gift.type === 'individual' && !isComplete && !isLocked && (
+              <button
+                onClick={handleReserve}
+                className="w-full rounded-xl border-2 border-[#B8860B] text-[#8B5A00] py-2.5 text-sm font-bold hover:bg-[#B8860B]/5 transition"
+              >
+                <Lock size={14} className="inline mr-1" />
+                Reserve & Contribute
+              </button>
+            )}
 
-        {gift.type === 'individual' && isLocked && (
-          <button
-            onClick={handleRelease}
-            disabled={releasing}
-            className="w-full rounded-xl border-2 border-red-200 text-red-600 py-2.5 text-sm font-bold hover:bg-red-50 transition disabled:opacity-60"
-          >
-            {releasing ? 'Releasing...' : 'Release Reservation'}
-          </button>
-        )}
+            {gift.type === 'individual' && isLocked && (
+              <button
+                onClick={handleRelease}
+                disabled={releasing}
+                className="w-full rounded-xl border-2 border-red-200 text-red-600 py-2.5 text-sm font-bold hover:bg-red-50 transition disabled:opacity-60"
+              >
+                {releasing ? 'Releasing...' : 'Release Reservation'}
+              </button>
+            )}
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => onContribute(gift)}
-            disabled={isComplete}
-            className={`flex-1 rounded-xl py-2.5 text-sm font-black transition-all duration-300 ${
-              isComplete
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : `${goldGradient} text-white shadow-md shadow-[#8B5A00]/20 hover:brightness-110`
-            }`}
-          >
-            {isComplete ? 'Fully Funded' : gift.type === 'individual' ? 'Claim This Gift' : 'Contribute'}
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              const url = `${window.location.origin}/digital-gift-card/${gift._id}`;
-              if (navigator.share) {
-                navigator.share({ title: gift.name, text: `Contribute to ${gift.name} on ZeAlpha!`, url });
-              } else {
-                navigator.clipboard.writeText(url);
-              }
-            }}
-            className="rounded-xl border border-[#dcc6a7] bg-white/60 px-3.5 py-2.5 text-sm font-semibold text-[#6f6257] transition hover:bg-[#f5e7ca] hover:text-[#8B5A00]"
-          >
-            <Share2 size={14} />
-          </button>
-        </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => onContribute(gift)}
+                disabled={isComplete}
+                className={`flex-1 rounded-xl py-2.5 text-sm font-black transition-all duration-300 ${
+                  isComplete
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : `${goldGradient} text-white shadow-md shadow-[#8B5A00]/20 hover:brightness-110`
+                }`}
+              >
+                {isComplete ? 'Fully Funded' : gift.type === 'individual' ? 'Claim This Gift' : 'Contribute'}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const url = `${window.location.origin}/digital-gift-card/${gift._id}`;
+                  if (navigator.share) {
+                    navigator.share({ title: gift.name, text: `Contribute to ${gift.name} on ZeAlpha!`, url });
+                  } else {
+                    navigator.clipboard.writeText(url);
+                  }
+                }}
+                className="rounded-xl border border-[#dcc6a7] bg-white/60 px-3.5 py-2.5 text-sm font-semibold text-[#6f6257] transition hover:bg-[#f5e7ca] hover:text-[#8B5A00]"
+              >
+                <Share2 size={14} />
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </motion.div>
   );
