@@ -13,7 +13,6 @@ const LiveActivityFeed = ({ weddingId }) => {
       .then(({ data }) => {
         const loaded = data.map((a) => ({
           message: a.message,
-          time: new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         }));
         setEvents(loaded);
       })
@@ -27,7 +26,6 @@ const LiveActivityFeed = ({ weddingId }) => {
       setEvents((current) => [
         {
           message: payload.message || 'New activity on the registry.',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
         ...current.slice(0, 8),
       ]);
@@ -69,7 +67,6 @@ const LiveActivityFeed = ({ weddingId }) => {
                 className="rounded-3xl bg-primary/5 p-4"
               >
                 <p className="text-sm text-primary-dark">{event.message}</p>
-                <p className="mt-2 text-xs text-secondary">{event.time}</p>
               </motion.div>
             ))}
           </AnimatePresence>

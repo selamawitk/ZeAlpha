@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Sparkles, BadgeCheck } from 'lucide-react';
 import { useSocket } from '../context/SocketContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import api, { fetchBlessings, addBlessing } from '../api/api.js';
 import GiftCard from '../components/GiftCard.jsx';
 import LiveActivityFeed from '../components/LiveActivityFeed.jsx';
@@ -14,6 +15,7 @@ import CelebrationModal from '../components/CelebrationModal.jsx';
 const Registry = () => {
   const { slug } = useParams();
   const { socket, joinWedding } = useSocket();
+  const { user } = useAuth();
   const [wedding, setWedding] = useState(null);
   const [gifts, setGifts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +27,11 @@ const Registry = () => {
   const [celebratedGift, setCelebratedGift] = useState(null);
   const [blessingForm, setBlessingForm] = useState({ guestName: '', message: '' });
   const [blessingSubmitted, setBlessingSubmitted] = useState(false);
+  const [contributedGiftIds, setContributedGiftIds] = useState(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem('contributedGiftIds') || '[]'));
+    } catch { return new Set(); }
+  });
 
   useEffect(() => {
     const fetchRegistry = async () => {
@@ -97,6 +104,22 @@ const Registry = () => {
       socket.off('gift:update', handleGiftUpdate);
     };
   }, [socket]);
+
+  useEffect(() => {
+    if (!user) {
+      const stored = localStorage.getItem('contributedGiftIds');
+      if (stored) {
+        try { setContributedGiftIds(new Set(JSON.parse(stored))); } catch {}
+      }
+      return;
+    }
+    api.get('/contributions', { params: { limit: 100 } })
+      .then(({ data }) => {
+        const ids = new Set((data || []).map(c => c.giftId?._id || c.giftId).filter(Boolean));
+        setContributedGiftIds(ids);
+      })
+      .catch(() => {});
+  }, [user]);
 
   const openContributionModal = (gift) => {
     setSelectedGift(gift);
@@ -224,6 +247,7 @@ const Registry = () => {
                 key={gift._id}
                 gift={gift}
                 onContribute={openContributionModal}
+                contributedByMe={contributedGiftIds.has(gift._id)}
               />
             ))}
           </div>
@@ -247,7 +271,6 @@ const Registry = () => {
             </button>
           </div>
           <Leaderboard weddingId={wedding?._id} />
-          <LiveActivityFeed weddingId={wedding?._id} />
 
           <div className="rounded-[2rem] bg-white p-6 shadow-premium">
             <h2 className="text-xl font-semibold text-primary-dark">Registry notes</h2>
