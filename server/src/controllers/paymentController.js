@@ -63,7 +63,7 @@ export const createStripeCheckout = async (req, res) => {
   const session = await createCheckoutSession({
     amount,
     currency,
-    successUrl: `${origin}/thank-you?session_id={CHECKOUT_SESSION_ID}&gift_id=${giftId}`,
+    successUrl: `${origin}/thank-you?session_id={CHECKOUT_SESSION_ID}&gift_id=${giftId}&amount=${amount}`,
     cancelUrl: `${origin}/thank-you?cancelled=true&gift_id=${giftId}`,
     metadata: {
       giftId,

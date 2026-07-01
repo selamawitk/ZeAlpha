@@ -42,6 +42,7 @@ const ThankYou = () => {
   const sessionId = searchParams.get('session_id');
   const giftId = searchParams.get('gift_id');
   const cancelled = searchParams.get('cancelled');
+  const urlAmount = searchParams.get('amount');
 
   const launchConfetti = useCallback(() => {
     if (confettiLaunched) return;
@@ -78,23 +79,23 @@ const ThankYou = () => {
         // gift fetch failed — try localStorage
       }
 
-      // Load contribution from localStorage
-      let amount = 0;
+      // Load contribution amount (URL param > pendingContribution > guestContributions)
+      let amount = urlAmount ? Number(urlAmount) : 0;
       let name = '';
       let message = '';
       let timestamp = Date.now();
-      try {
-        const pending = JSON.parse(localStorage.getItem('pendingContribution') || '{}');
-        if (pending.giftId === giftId) {
-          amount = pending.amount || 0;
-          name = pending.guestName || 'You';
-          message = pending.message || '';
-          timestamp = pending.timestamp || Date.now();
-        }
-        localStorage.removeItem('pendingContribution');
-      } catch {}
-
-      // Fallback: if no amount from pending, check guestContributions
+      if (!amount) {
+        try {
+          const pending = JSON.parse(localStorage.getItem('pendingContribution') || '{}');
+          if (pending.giftId === giftId) {
+            amount = pending.amount || 0;
+            name = pending.guestName || 'You';
+            message = pending.message || '';
+            timestamp = pending.timestamp || Date.now();
+          }
+          localStorage.removeItem('pendingContribution');
+        } catch {}
+      }
       if (!amount) {
         try {
           const guestCs = JSON.parse(localStorage.getItem('guestContributions') || '[]');
