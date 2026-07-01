@@ -13,6 +13,7 @@ const NOTIFICATION_ICONS = {
   milestone: <Award className="h-5 w-5" />,
   guest: <UserPlus className="h-5 w-5" />,
   gift_surge: <TrendingUp className="h-5 w-5" />,
+  gift_completed: <Award className="h-5 w-5" />,
   admin_alert: <AlertTriangle className="h-5 w-5" />,
 };
 
@@ -23,6 +24,7 @@ const NOTIFICATION_BG = {
   milestone: 'bg-amber-50 border-amber-200',
   guest: 'bg-pink-50 border-pink-200',
   gift_surge: 'bg-orange-50 border-orange-200',
+  gift_completed: 'bg-emerald-50 border-emerald-200',
   admin_alert: 'bg-red-50 border-red-200',
 };
 

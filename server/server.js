@@ -251,8 +251,8 @@ const checkApproachingWeddings = async () => {
         message: `Your wedding "${wedding.weddingName}" is ${daysAway} day${daysAway === 1 ? '' : 's'} away. Make sure your registry is ready!`,
         link: '/dashboard',
       };
-      await Notification.create(notifyData);
-      emitNotification(notifyData);
+      const savedWeddingNotif = await Notification.create(notifyData);
+      emitNotification(savedWeddingNotif);
 
       if (wedding.couple?.email) {
         try {

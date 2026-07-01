@@ -146,20 +146,19 @@ export const createContribution = async (req, res) => {
     await wedding.save();
   }
 
-  if (isInstant) {
-    try {
-      if (req.user && req.user.email) {
-        await sendGiftReceipt(req.user.email, req.user.name, amount, updatedGift.name, updatedGift.digitalCardUrl);
-      }
-    } catch (err) {
-      console.error('Email delivery failed:', err);
+  try {
+    const guestEmail = req.user?.email || null;
+    if (isInstant && guestEmail) {
+      await sendGiftReceipt(guestEmail, contributorName, amount, updatedGift.name, updatedGift.digitalCardUrl);
     }
+  } catch (err) {
+    console.error('Email delivery failed:', err);
   }
 
   if (willCompleteGift) {
     try {
       const couple = await User.findById(weddingRes.couple);
-      if (couple) await sendWeddingFundedAlert(couple.email, updatedGift.name, updatedGift.totalPrice);
+      if (couple?.email) await sendWeddingFundedAlert(couple.email, updatedGift.name, updatedGift.totalPrice);
     } catch (err) {
       console.error('Wedding funded email failed:', err);
     }
@@ -186,7 +185,7 @@ export const createContribution = async (req, res) => {
   emitActivity(activity);
 
   // Save notification to DB
-  await Notification.create({
+  const savedNotif = await Notification.create({
     recipient: weddingRes.couple,
     weddingId: gift.weddingId,
     type: 'contribution',
@@ -195,27 +194,23 @@ export const createContribution = async (req, res) => {
     link: `/dashboard`
   });
 
-  emitNotification({
-    recipient: weddingRes.couple,
-    weddingId: gift.weddingId,
-    type: 'contribution',
-    title: 'New contribution',
-    message: `${contributorName} contributed ${amount} ETB to ${updatedGift.name}`,
-    link: `/dashboard`
-  });
+  emitNotification(savedNotif);
 
-  // Notify contributor when their payment succeeds (if logged in)
+  // Notify contributor when their payment is received (if logged in)
   if (guestUserId) {
+    const isPending = paymentMethod === 'bank_transfer';
     const contributorNotify = {
       recipient: guestUserId,
       weddingId: gift.weddingId,
       type: 'contribution',
-      title: 'Payment Successful',
-      message: `Your contribution of ${amount} ETB to ${updatedGift.name} was successful.`,
+      title: isPending ? 'Payment Submitted' : 'Payment Successful',
+      message: isPending
+        ? `Your contribution of ${amount} ETB to ${updatedGift.name} has been submitted and is pending approval.`
+        : `Your contribution of ${amount} ETB to ${updatedGift.name} was successful.`,
       link: `/w/${weddingForCard?.slug || ''}`,
     };
-    await Notification.create(contributorNotify);
-    emitNotification(contributorNotify);
+    const savedContributorNotif = await Notification.create(contributorNotify);
+    emitNotification(savedContributorNotif);
   }
 
   // Gift completion notification
@@ -228,8 +223,8 @@ export const createContribution = async (req, res) => {
       message: `Your gift "${updatedGift.name}" has reached 100% funding with ${updatedGift.currentCollected} ETB.`,
       link: '/dashboard',
     };
-    await Notification.create(completionNotify);
-    emitNotification(completionNotify);
+    const savedCompletionNotif = await Notification.create(completionNotify);
+    emitNotification(savedCompletionNotif);
     emitActivity({
       weddingId: updatedGift.weddingId,
       title: `${updatedGift.name} fully funded`,
@@ -246,8 +241,8 @@ export const createContribution = async (req, res) => {
         message: `Your contribution helped fully fund "${updatedGift.name}". Thank you!`,
         link: `/w/${weddingForCard?.slug || ''}`,
       };
-      await Notification.create(contributorNotify);
-      emitNotification(contributorNotify);
+      const savedContributorCompleteNotif = await Notification.create(contributorNotify);
+      emitNotification(savedContributorCompleteNotif);
     }
   }
 
@@ -283,8 +278,8 @@ export const createContribution = async (req, res) => {
           message: `Your order for ${updatedGift.name} has been placed with ${populated.vendor?.name || 'vendor'}.`,
           link: '/dashboard/fulfillment',
         };
-        await Notification.create(notifyData);
-        emitNotification(notifyData);
+        const savedVendorNotif = await Notification.create(notifyData);
+        emitNotification(savedVendorNotif);
         emitActivity({
           weddingId: updatedGift.weddingId,
           title: `${updatedGift.name} order created`,
@@ -364,8 +359,8 @@ export const updateContributionStatus = async (req, res) => {
         message: `Your gift "${updatedGift.name}" has reached 100% funding with ${updatedGift.currentCollected} ETB.`,
         link: '/dashboard',
       };
-      await Notification.create(completionNotify);
-      emitNotification(completionNotify);
+      const savedCompletionNotif2 = await Notification.create(completionNotify);
+      emitNotification(savedCompletionNotif2);
       emitActivity({
         weddingId: updatedGift.weddingId,
         title: `${updatedGift.name} fully funded`,
@@ -382,8 +377,8 @@ export const updateContributionStatus = async (req, res) => {
           message: `Your contribution helped fully fund "${updatedGift.name}". Thank you!`,
           link: '/guest',
         };
-        await Notification.create(contributorNotify);
-        emitNotification(contributorNotify);
+        const savedContributorCompleteNotif2 = await Notification.create(contributorNotify);
+        emitNotification(savedContributorCompleteNotif2);
       }
     }
 
@@ -397,8 +392,8 @@ export const updateContributionStatus = async (req, res) => {
         message: `Your contribution of ${contribution.amount} ETB to ${updatedGift.name} has been approved.`,
         link: '/guest',
       };
-      await Notification.create(approvedNotify);
-      emitNotification(approvedNotify);
+      const savedApprovedNotif = await Notification.create(approvedNotify);
+      emitNotification(savedApprovedNotif);
     }
 
     try {
@@ -460,8 +455,8 @@ export const updateContributionStatus = async (req, res) => {
             message: `Your order for ${updatedGift.name} has been placed with ${populated.vendor?.name || 'vendor'}.`,
             link: '/dashboard/fulfillment',
           };
-          await Notification.create(notifyData);
-          emitNotification(notifyData);
+          const savedVendorNotif2 = await Notification.create(notifyData);
+          emitNotification(savedVendorNotif2);
           emitActivity({
             weddingId: updatedGift.weddingId,
             title: `${updatedGift.name} order created`,

@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
+import api from '../api/api.js';
 import {
   Bell,
   Search,
@@ -69,6 +70,19 @@ const GuestLayout = () => {
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
 
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const { data } = await api.get('/notifications');
+      if (Array.isArray(data)) {
+        setNotifCount(data.filter(n => !n.isRead).length);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
   useEffect(() => {
     if (!socket) return;
     const handler = (notif) => {
@@ -87,8 +101,11 @@ const GuestLayout = () => {
   }, [socket, activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'notifications') setNotifCount(0);
-  }, [activeTab]);
+    if (activeTab === 'notifications') {
+      setNotifCount(0);
+      fetchUnreadCount();
+    }
+  }, [activeTab, fetchUnreadCount]);
 
   const toggleCollapsed = () => {
     const next = !collapsed;

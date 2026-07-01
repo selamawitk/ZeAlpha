@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Calendar, AlertTriangle, PartyPopper, Sparkles } from 'lucide-react';
@@ -26,7 +26,7 @@ const Spinner = () => (
 
 const Dashboard = () => {
   const { user, loading, updateUser } = useAuth();
-  const { socket } = useSocket();
+  const { socket, joinWedding } = useSocket();
   const [wedding, setWedding] = useState(null);
   const [gifts, setGifts] = useState([]);
   const [loadingWedding, setLoadingWedding] = useState(true);
@@ -40,7 +40,9 @@ const Dashboard = () => {
       const fetchWedding = async () => {
         try {
           const weddingRes = await api.get(`/weddings/${user.managedWedding}`);
-          setWedding(weddingRes.data);
+          const w = weddingRes.data;
+          setWedding(w);
+          if (w?._id) joinWedding(w._id);
         } catch (err) {
           if (err.response?.status === 404) {
             updateUser({ managedWedding: null });
@@ -133,7 +135,7 @@ const Dashboard = () => {
   }
 
   const giftCount = gifts?.length ?? 0;
-  const totalRaised = wedding?.stats?.totalRaised ?? 0;
+  const totalRaised = useMemo(() => gifts.reduce((sum, g) => sum + (Number(g.currentCollected) || 0), 0), [gifts]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`min-h-full ${pageBackground} ${textPrimary} overflow-x-hidden max-w-full`}>
@@ -204,7 +206,7 @@ const Dashboard = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }} whileHover={{ scale: 1.02, y: -4 }} className="h-full">
             <div className={`p-6 rounded-[28px] ${cardElevated} h-full flex flex-col`}>
               <p className="text-[11px] uppercase tracking-[0.2em] font-bold text-[#8c755e]">Total Raised</p>
-              <p className={`mt-3 text-5xl font-black tracking-tight ${textPrimary}`}>{loadingWedding ? '—' : totalRaised.toLocaleString()}</p>
+              <p className={`mt-3 text-5xl font-black tracking-tight ${textPrimary}`}>{loadingGifts ? '—' : totalRaised.toLocaleString()}</p>
               <p className="mt-1 text-sm font-bold text-[#6f6257]">ETB</p>
               <div className="mt-4 flex items-center gap-2">
                 <div className="h-2 flex-1 rounded-full bg-[#e5d7c4] overflow-hidden">

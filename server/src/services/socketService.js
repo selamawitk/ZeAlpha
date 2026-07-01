@@ -124,8 +124,8 @@ export const emitGiftSurge = async (gift) => {
           message: `${gift.name} is over 80% funded (${Math.round((gift.currentCollected / gift.totalPrice) * 100)}%). Guests are rallying!`,
           link: '/dashboard/gifts',
         };
-        await Notification.create(surgeNotify);
-        emitNotification(surgeNotify);
+        const savedSurgeNotif = await Notification.create(surgeNotify);
+        emitNotification(savedSurgeNotif);
 
         try {
           const user = await User.findById(wedding.couple);

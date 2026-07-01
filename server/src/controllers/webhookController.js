@@ -13,7 +13,7 @@ import { resolveWedding } from '../utils/weddingResolver.js';
 const saveNotif = async (data) => {
   try {
     const n = await Notification.create(data);
-    emitNotification(data);
+    emitNotification(n);
     return n;
   } catch (err) {
     console.error('Failed to create notification:', err.message, data);

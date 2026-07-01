@@ -103,8 +103,17 @@ const GiftCard = ({ gift, onContribute = () => {}, contributedByMe = false, isOw
         {/* Progress bar */}
         <div className="mb-3">
           <div className="flex justify-between text-sm mb-1.5">
-            <span className="font-semibold text-[#2d2218]">{Math.round(progress)}% funded</span>
-            <span className="font-bold text-[#8B5A00]">{gift.currentCollected} / {gift.totalPrice} ETB</span>
+            {gift.type === 'individual' && gift.currentCollected === 0 ? (
+              <>
+                <span className="font-semibold text-[#2d2218]">Full Amount</span>
+                <span className="font-bold text-[#8B5A00]">{gift.totalPrice} ETB</span>
+              </>
+            ) : (
+              <>
+                <span className="font-semibold text-[#2d2218]">{Math.round(progress)}% funded</span>
+                <span className="font-bold text-[#8B5A00]">{gift.currentCollected} / {gift.totalPrice} ETB</span>
+              </>
+            )}
           </div>
           <div className="w-full rounded-full h-2.5 overflow-hidden bg-[#ead9c0]">
             <motion.div

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
@@ -18,6 +18,7 @@ import {
   X,
   AlertTriangle
 } from 'lucide-react';
+import api from '../api/api.js';
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
@@ -30,6 +31,19 @@ const DashboardLayout = () => {
   const [notifCount, setNotifCount] = useState(0);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const { data } = await api.get('/notifications');
+      if (Array.isArray(data)) {
+        setNotifCount(data.filter(n => !n.isRead).length);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
 
   useEffect(() => {
     if (!socket) return;
@@ -47,8 +61,11 @@ const DashboardLayout = () => {
   }, [socket]);
 
   useEffect(() => {
-    if (location.pathname === '/dashboard/notifications') setNotifCount(0);
-  }, [location.pathname]);
+    if (location.pathname === '/dashboard/notifications') {
+      setNotifCount(0);
+      fetchUnreadCount();
+    }
+  }, [location.pathname, fetchUnreadCount]);
 
   const navItem = ({ isActive }) =>
     `group relative flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300

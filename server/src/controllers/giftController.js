@@ -88,8 +88,8 @@ export const createGuestGift = async (req, res) => {
         message: `A guest suggested "${gift.name}" (${Number(totalPrice).toLocaleString()} ETB) for your registry.`,
         link: '/dashboard/gifts',
       };
-      await Notification.create(notify);
-      emitNotification(notify);
+      const savedNotif = await Notification.create(notify);
+      emitNotification(savedNotif);
     }
 
     emitActivity({
@@ -151,8 +151,24 @@ export const approveGuestGift = async (req, res) => {
           : `"${gift.name}" was rejected.`,
         link: '/dashboard/gifts',
       };
-      await Notification.create(notify);
-      emitNotification(notify);
+      const savedCoupleNotif = await Notification.create(notify);
+      emitNotification(savedCoupleNotif);
+    }
+
+    // Notify the guest who created the gift
+    if (gift.createdBy) {
+      const guestNotify = {
+        recipient: gift.createdBy,
+        weddingId: gift.weddingId,
+        type: 'admin_alert',
+        title: status === 'approved' ? 'Your Gift Suggestion Was Approved!' : 'Your Gift Suggestion Was Not Approved',
+        message: status === 'approved'
+          ? `"${gift.name}" has been approved and is now live on the registry.`
+          : `"${gift.name}" was not approved by the couple.`,
+        link: weddingRes ? `/w/${weddingRes.slug}` : '/',
+      };
+      const savedGuestNotif = await Notification.create(guestNotify);
+      emitNotification(savedGuestNotif);
     }
 
     emitGiftUpdate(gift);
@@ -498,22 +514,17 @@ export const updateGiftDelivery = async (req, res) => {
       const statusLabels = { not_shipped: 'Not shipped', processing: 'Processing', shipped: 'Shipped', in_transit: 'In transit', delivered: 'Delivered', cancelled: 'Cancelled' };
       const deliveryTypeMap = { shipped: 'order_shipped', in_transit: 'order_shipped', delivered: 'order_delivered', cancelled: 'order_cancelled' };
       const notifType = deliveryTypeMap[deliveryStatus] || 'order_shipped';
-      await (await import('../models/Notification.js')).default.create({
+      const NotificationModel = (await import('../models/Notification.js')).default;
+      const deliveryNotif = {
         recipient: weddingRes?.couple || req.user?._id,
         weddingId: gift.weddingId,
         type: notifType,
         title: `Delivery update: ${gift.name}`,
         message: `Delivery status for "${gift.name}" is now: ${statusLabels[deliveryStatus] || deliveryStatus}`,
         link: '/dashboard/fulfillment',
-      });
-      emitNotification({
-        recipient: weddingRes?.couple,
-        weddingId: gift.weddingId,
-        type: notifType,
-        title: `Delivery update: ${gift.name}`,
-        message: `Delivery status for "${gift.name}" is now: ${statusLabels[deliveryStatus] || deliveryStatus}`,
-        link: '/dashboard/fulfillment',
-      });
+      };
+      const savedDeliveryNotif = await NotificationModel.create(deliveryNotif);
+      emitNotification(savedDeliveryNotif);
       emitActivity({
         weddingId: gift.weddingId,
         title: `Delivery update: ${gift.name}`,
