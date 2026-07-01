@@ -32,37 +32,48 @@ export const getGiftRecommendation = async ({ budget, relationship, weddingData 
     .map(g => `- ${g.name}: ${g.currentCollected}/${g.totalPrice} ETB (${Math.round((g.currentCollected/g.totalPrice)*100)}% funded, type: ${g.type}, category: ${g.category || 'general'})`)
     .join('\n');
 
-  const prompt = `You are a wedding gift recommendation assistant for ZeAlpha, an Ethiopian collaborative wedding registry platform.
+  const prompt = `You are an AI gift advisor for ZeAlpha — a modern Ethiopian collaborative wedding registry platform.
 
-Wedding: ${weddingData.weddingName || 'A Wedding'}
-Couple: ${weddingData.coupleName || 'the couple'}
-Budget: ${budget} ETB
-Guest Relationship: ${relationship || 'Not specified'}
+APP FEATURES:
+- Guests contribute money toward gifts on the couple's registry
+- Gifts marked "fractional" allow multiple guests to pool contributions (great for expensive items)
+- Gifts marked "unique" require one full contribution
+- Guests can leave messages with their contribution
+- Digital thank-you cards are generated for contributors
+- Email receipts are sent to contributors who provide an email
 
-Current Registry:
-${registrySummary || 'No gifts yet in the registry.'}
+USER DETAILS:
+- Wedding: ${weddingData.weddingName || 'A Wedding'}
+- Couple: ${weddingData.coupleName || 'the couple'}
+- Guest's Budget: ${budget} ETB
+- Guest's Relationship: ${relationship || 'Not specified'}
 
-Based on the guest's budget of ${budget} ETB and their relationship as "${relationship || 'a guest'}", recommend up to 3 options from the registry AND suggest 1 new gift idea if appropriate.
+CURRENT REGISTRY:
+${registrySummary || 'The registry is still empty — the couple needs gift ideas.'}
 
-Ethiopian context: Consider culturally relevant gifts like traditional coffee sets, Ethiopian textiles, kitchen equipment for large family gatherings.
+YOUR TASK:
+Recommend up to 3 options. Each option must be either:
+A) An existing registry gift the guest can contribute to ("join_existing")
+B) A new gift idea the couple could add ("create_new")
 
 Return ONLY a JSON array (no markdown, no code fences) with EXACTLY this structure:
 [
   {
     "giftId": "existing_gift_id_or_null",
     "giftName": "Name of gift",
-    "reason": "1 sentence why this fits",
+    "reason": "One clear sentence explaining why this fits the guest's budget and relationship",
     "recommendedAmount": 123,
     "action": "join_existing"
   }
 ]
 
-Rules:
-- For gifts already in the registry with remaining amount <= budget: action = "join_existing", include the gift's _id as giftId
-- If budget is small and remaining amounts are high, suggest partial contribution to closest-funded gift
-- If no affordable existing gifts, suggest creating a new gift: action = "create_new", giftId = null
-- For expensive items (> 5000 ETB) that make sense, suggest them as shareable with action = "create_new"
-- Return 1-3 recommendations`;
+RULES:
+- join_existing: only if remaining cost (totalPrice - currentCollected) <= budget. Include the gift's _id as giftId.
+- If remaining cost exceeds budget, suggest a partial contribution to the closest-funded gift that the guest can meaningfully help finish.
+- create_new: suggest a new gift when existing ones don't fit the budget. Suggest culturally relevant Ethiopian wedding gifts (coffee sets, textiles, kitchenware, furniture, electronics).
+- Keep reasons short — one sentence max.
+- Return 1-3 recommendations only.
+- Be practical: a "Best Friend" with 5000 ETB deserves a better suggestion than a "Coworker" with 500 ETB.`;
 
   try {
     const response = await generateWithFallback(prompt);
@@ -88,22 +99,33 @@ export const getRegistryPlanner = async ({ weddingData, question }) => {
     .map(g => `- ${g.name}: ${g.totalPrice} ETB (${Math.round((g.currentCollected/g.totalPrice)*100)}% funded, type: ${g.type}, category: ${g.category || 'general'})`)
     .join('\n');
 
-  const prompt = `You are a wedding registry planning assistant for ZeAlpha, an Ethiopian collaborative wedding gift platform.
+  const prompt = `You are an AI wedding registry planner for ZeAlpha — a modern Ethiopian collaborative wedding registry platform.
 
-Wedding: ${weddingData.weddingName || 'A Wedding'}
-Couple: ${weddingData.coupleName || ''}
-Wedding Date: ${weddingData.weddingDate || 'Not set'}
+APP FEATURES:
+- Gifts can be "fractional" (many guests pool money) or "unique" (one guest pays full price)
+- Guests contribute money, not physical items — the couple receives cash that they can use to buy the gift themselves
+- Digital thank-you cards are sent to contributors
+- Email receipts are sent to contributors who provide their email
+- The couple can track funding progress in real-time
+- When fully funded, the couple can request a payout
 
-Current Registry:
-${registrySummary || 'Registry is empty.'}
+COUPLE DETAILS:
+- Wedding: ${weddingData.weddingName || 'A Wedding'}
+- Couple: ${weddingData.coupleName || ''}
+- Wedding Date: ${weddingData.weddingDate || 'Not set'}
 
-The couple asks: "${question}"
+CURRENT REGISTRY:
+${registrySummary || 'Registry is empty — the couple needs initial gift ideas.'}
 
-Provide helpful, practical gift suggestions for an Ethiopian wedding. Consider:
-- Traditional Ethiopian wedding needs (coffee ceremony set, mesob, habesha kemis)
-- Modern household essentials (bed, sofa, fridge, electronics, kitchen equipment)
-- Which items should be shareable (fractional) because multiple guests can contribute
-- Budget-conscious recommendations
+THE COUPLE ASKS: "${question}"
+
+YOUR TASK:
+Give 4-5 specific, practical gift suggestions for an Ethiopian wedding. Consider:
+- Traditional Ethiopian needs: coffee ceremony sets, mesob (woven table), habesha kemis, Ethiopian textiles
+- Modern essentials: sofa set, bed frame, refrigerator, blender, cookware, dining table
+- Items under 3000 ETB can be "unique" (one guest covers it)
+- Items over 5000 ETB MUST be "fractional" (so multiple guests can contribute)
+- The summary should be 2-3 sentences of clear, actionable advice
 
 Return ONLY a JSON object (no markdown, no code fences) with EXACTLY this structure:
 {
@@ -113,14 +135,14 @@ Return ONLY a JSON object (no markdown, no code fences) with EXACTLY this struct
       "category": "Furniture|Kitchen|Electronics|Traditional|Home",
       "estimatedPrice": 5000,
       "type": "fractional",
-      "reason": "Why this gift is appropriate",
-      "shareableNote": "If expensive, explain why this should be shareable. Otherwise null."
+      "reason": "One clear sentence why this gift is perfect for them",
+      "shareableNote": "If over 5000 ETB, explain why sharing works. Otherwise null."
     }
   ],
-  "summary": "Overall advice for the couple"
+  "summary": "2-3 sentences of clear, actionable advice for the couple"
 }
 
-For any item over 5000 ETB, MUST set type to "fractional" and provide a shareableNote explaining why multiple guests should contribute.`;
+Make the summary short, direct, and helpful — not generic. Example: "Focus on kitchen essentials first since your wedding is 2 months away. Add a coffee set for tradition and a sofa for the living room. Make big items shareable so guests can contribute together."`;
 
   try {
     const response = await generateWithFallback(prompt);
