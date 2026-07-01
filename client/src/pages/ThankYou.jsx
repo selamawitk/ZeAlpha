@@ -103,7 +103,16 @@ const ThankYou = () => {
               localStorage.setItem('contributedGiftIds', JSON.stringify(stored));
             }
             const guestCs = JSON.parse(localStorage.getItem('guestContributions') || '[]');
-            const amount = last?.amount || 0;
+            let amount = last?.amount || 0;
+            if (!amount) {
+              try {
+                const pending = JSON.parse(localStorage.getItem('pendingContribution') || '{}');
+                if (pending.giftId === giftId && pending.amount) {
+                  amount = pending.amount;
+                }
+                localStorage.removeItem('pendingContribution');
+              } catch {}
+            }
             guestCs.unshift({
               _id: last?._id || Date.now().toString(),
               giftId: gift,
