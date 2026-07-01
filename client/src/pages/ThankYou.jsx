@@ -168,7 +168,7 @@ const ThankYou = () => {
     const shareData = {
       title: 'ZeAlpha Wedding Gift Contribution',
       text: `I just contributed to "${currentContribution?.gift?.name || 'a wedding gift'}" on ZeAlpha! 🎉`,
-      url: window.location.origin + '/my-gifts',
+      url: window.location.origin + '/guest?tab=gifts',
     };
     if (navigator.share) { try { navigator.share(shareData); } catch {} }
     else { try { navigator.clipboard.writeText(shareData.url); } catch {} }
@@ -335,7 +335,7 @@ const ThankYou = () => {
 
             {/* Action Buttons */}
             <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-3">
-              <Link to="/my-gifts" className={`inline-flex items-center gap-2 rounded-2xl ${goldGradient} px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#8B5A00]/20 transition-all duration-300 hover:brightness-110 hover:shadow-xl active:scale-95`}>
+              <Link to="/guest?tab=gifts" className={`inline-flex items-center gap-2 rounded-2xl ${goldGradient} px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#8B5A00]/20 transition-all duration-300 hover:brightness-110 hover:shadow-xl active:scale-95`}>
                 <ArrowLeft className="h-4 w-4" />
                 View My Gifts
               </Link>
