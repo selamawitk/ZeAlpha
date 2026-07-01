@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useSocket } from '../context/SocketContext.jsx';
 import {
   Bell,
   Search,
@@ -58,11 +59,36 @@ const ThankYouPanel = () => {
 
 const GuestLayout = () => {
   const { user, logout } = useAuth();
+  const { socket } = useSocket();
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem('guestSidebarCollapsed') === 'true';
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [notifCount, setNotifCount] = useState(0);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (notif) => {
+      if (activeTab !== 'notifications') {
+        setNotifCount(c => c + 1);
+      }
+      setToast(notif);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 5000);
+    };
+    socket.on('notification:update', handler);
+    return () => {
+      socket.off('notification:update', handler);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, [socket, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'notifications') setNotifCount(0);
+  }, [activeTab]);
 
   const toggleCollapsed = () => {
     const next = !collapsed;
@@ -76,7 +102,7 @@ const GuestLayout = () => {
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
     { id: 'gifts', label: 'My Gifts', icon: <Gift size={18} /> },
     { id: 'find', label: 'Find Wedding', icon: <Search size={18} /> },
-    { id: 'notifications', label: 'Notifications', icon: <Bell size={18} /> },
+    { id: 'notifications', label: 'Notifications', icon: <span className="relative"><Bell size={18} />{notifCount > 0 && <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">{notifCount > 9 ? '9+' : notifCount}</span>}</span> },
     { id: 'thankyou', label: 'Thank You Cards', icon: <Heart size={18} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
   ];
@@ -185,6 +211,22 @@ const GuestLayout = () => {
           </div>
         </header>
 
+        {toast && (
+          <div className="fixed top-4 right-4 z-[100] max-w-sm animate-slide-in rounded-[28px] bg-gradient-to-br from-[#F4EBDD]/98 via-[#E7D3B7]/98 to-[#D6B58B]/98 border border-[#CFA97A] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#B8860B]/10 shrink-0">
+                <Bell className="h-4 w-4 text-[#8B5A00]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-[#2d2218] truncate">{toast.title}</p>
+                <p className="text-xs text-[#6f6257] mt-0.5 line-clamp-2">{toast.message}</p>
+              </div>
+              <button onClick={() => setToast(null)} className="shrink-0 p-1 rounded-full hover:bg-white/60">
+                <X size={14} className="text-[#6f6257]" />
+              </button>
+            </div>
+          </div>
+        )}
         <div className="flex-1 px-6 py-2">
           {activeTab === 'dashboard' && <GuestDashboard />}
           {activeTab === 'gifts' && <MyGifts />}
